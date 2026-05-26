@@ -1,3 +1,5 @@
+import Partners from "./pages/Partners.jsx";
+import Clients from "./pages/Clients.jsx";
 import { useState } from "react";
 
 const API_URL = "https://sila.silasystem.com:8000/General/GeneralAPI/";
@@ -21,7 +23,17 @@ async function apiCall(params) {
   return d;
 }
 
-// ─── Login Screen ───────────────────────────────────────────────
+const PAGE_ICONS = {
+  "Partners":  "ti-users",
+  "Products":  "ti-box",
+  "Clients":   "ti-building",
+};
+
+function getInitials(name) {
+  return name.slice(0,2).toUpperCase();
+}
+
+// ─── Login ───────────────────────────────────────────────────────
 function LoginScreen({ onLogin }) {
   const [user, setUser] = useState("");
   const [pass, setPass] = useState("");
@@ -33,7 +45,7 @@ function LoginScreen({ onLogin }) {
     setError(""); setLoading(true);
     try {
       const d = await apiCall({ Operation: "login", User: user, LineData: pass });
-      const row = d?.List?.[0];
+      const row = d?.List0?.[0];
       if (row?.State === 0) {
         onLogin({ user, nav: d?.List1 || [] });
       } else {
@@ -47,9 +59,9 @@ function LoginScreen({ onLogin }) {
     <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#5B4FE8"}}>
       <div style={{background:"#fff",borderRadius:16,padding:"2.25rem 2rem",width:"100%",maxWidth:380,boxShadow:"0 8px 40px rgba(0,0,0,0.18)"}}>
         <div style={{textAlign:"center",marginBottom:"2rem"}}>
-          <img src="logo.png" alt="Yalla Fix" style={{height:56,objectFit:"contain"}}
-            onError={e=>{e.target.style.display="none";}}
-          />
+          <img src={import.meta.env.BASE_URL + "logo.png"} alt="Yalla Fix"
+            style={{height:56,objectFit:"contain"}}
+            onError={e=>e.target.style.display="none"}/>
           <p style={{fontSize:12,color:"#999",marginTop:6}}>Control Panel</p>
         </div>
         <div style={{marginBottom:"1rem"}}>
@@ -83,7 +95,6 @@ function Shell({ session, onLogout }) {
   const [activeTab, setActiveTab] = useState(null);
   const [collapsed, setCollapsed] = useState({});
 
-  // Group nav items
   const groups = session.nav.reduce((acc, item) => {
     if (!acc[item.GroupID]) acc[item.GroupID] = { GroupID: item.GroupID, GroupName: item.GroupName, pages: [] };
     acc[item.GroupID].pages.push({ PageID: item.PageID, PageName: item.PageName });
@@ -91,8 +102,7 @@ function Shell({ session, onLogout }) {
   }, {});
 
   function openTab(page) {
-    const exists = tabs.find(t => t.PageID === page.PageID);
-    if (!exists) setTabs(prev => [...prev, page]);
+    if (!tabs.find(t => t.PageID === page.PageID)) setTabs(prev => [...prev, page]);
     setActiveTab(page.PageID);
   }
 
@@ -107,81 +117,104 @@ function Shell({ session, onLogout }) {
     setCollapsed(prev => ({ ...prev, [gid]: !prev[gid] }));
   }
 
-  const sidebarW = 220;
+  const activePageName = tabs.find(t => t.PageID === activeTab)?.PageName;
 
   return (
-    <div style={{display:"flex",height:"100vh",fontFamily:"sans-serif",overflow:"hidden"}}>
+    <div style={{display:"flex",flexDirection:"column",height:"100vh",fontFamily:"sans-serif",overflow:"hidden"}}>
 
-      {/* Sidebar */}
-      <div style={{width:sidebarW,minWidth:sidebarW,background:"#0f2d5a",display:"flex",flexDirection:"column",height:"100vh"}}>
-        {/* Logo */}
-        <div style={{padding:"1rem 1rem 0.75rem",borderBottom:"1px solid rgba(255,255,255,0.08)"}}>
-          <img src="logo.png" alt="Yalla Fix" style={{height:36,objectFit:"contain",filter:"brightness(10)"}}
+      {/* ── Top Bar ── */}
+      <div style={{height:52,background:"#fff",borderBottom:"1px solid #e2e8f0",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 1.25rem",flexShrink:0,zIndex:10}}>
+        {/* Left: logo */}
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <img src={import.meta.env.BASE_URL + "logo.png"} alt="Yalla Fix"
+            style={{height:30,objectFit:"contain"}}
             onError={e=>e.target.style.display="none"}/>
+          <span style={{fontSize:13,color:"#94a3b8",borderLeft:"1px solid #e2e8f0",paddingLeft:10}}>Control Panel</span>
         </div>
-
-        {/* Nav */}
-        <div style={{flex:1,overflowY:"auto",padding:"0.5rem 0"}}>
-          {Object.values(groups).map(g => (
-            <div key={g.GroupID}>
-              {/* Group header */}
-              <div onClick={()=>toggleGroup(g.GroupID)}
-                style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 16px",cursor:"pointer",color:"#93c5fd",fontSize:11,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",userSelect:"none"}}>
-                <span>{g.GroupName}</span>
-                <span style={{transition:"transform 0.2s",transform:collapsed[g.GroupID]?"rotate(-90deg)":"rotate(0deg)",fontSize:10}}>▾</span>
-              </div>
-              {/* Pages */}
-              {!collapsed[g.GroupID] && g.pages.map(p => (
-                <div key={p.PageID} onClick={()=>openTab(p)}
-                  style={{padding:"7px 16px 7px 28px",cursor:"pointer",fontSize:13,color: activeTab===p.PageID?"#fff":"#94a3b8",background: activeTab===p.PageID?"rgba(99,102,241,0.25)":"transparent",borderLeft: activeTab===p.PageID?"3px solid #818cf8":"3px solid transparent",transition:"all 0.15s"}}>
-                  {p.PageName}
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-
-        {/* User / Logout */}
-        <div style={{padding:"0.75rem 1rem",borderTop:"1px solid rgba(255,255,255,0.08)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <span style={{fontSize:12,color:"#94a3b8"}}>{session.user}</span>
+        {/* Right: user avatar + logout */}
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <div style={{width:32,height:32,borderRadius:"50%",background:"#5B4FE8",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:600,color:"#fff"}}>
+            {getInitials(session.user)}
+          </div>
+          <span style={{fontSize:13,color:"#475569",fontWeight:500}}>{session.user}</span>
           <button onClick={onLogout}
-            style={{fontSize:11,color:"#f87171",background:"transparent",border:"none",cursor:"pointer"}}>
+            style={{display:"flex",alignItems:"center",gap:5,fontSize:13,color:"#ef4444",background:"transparent",border:"1px solid #fecaca",borderRadius:6,padding:"4px 10px",cursor:"pointer"}}>
+            <i className="ti ti-logout" style={{fontSize:15}} aria-hidden="true"></i>
             Logout
           </button>
         </div>
       </div>
 
-      {/* Main */}
-      <div style={{flex:1,display:"flex",flexDirection:"column",background:"#f1f5f9",overflow:"hidden"}}>
+      {/* ── Body ── */}
+      <div style={{display:"flex",flex:1,overflow:"hidden"}}>
 
-        {/* Tab bar */}
-        <div style={{display:"flex",alignItems:"center",background:"#fff",borderBottom:"1px solid #e2e8f0",overflowX:"auto",minHeight:40,flexShrink:0}}>
-          {tabs.length === 0 && (
-            <span style={{padding:"0 16px",fontSize:13,color:"#94a3b8"}}>Select a page from the sidebar</span>
-          )}
-          {tabs.map(t => (
-            <div key={t.PageID} onClick={()=>setActiveTab(t.PageID)}
-              style={{display:"flex",alignItems:"center",gap:8,padding:"0 14px",height:40,cursor:"pointer",fontSize:13,whiteSpace:"nowrap",borderBottom: activeTab===t.PageID?"2px solid #6366f1":"2px solid transparent",color: activeTab===t.PageID?"#6366f1":"#64748b",background: activeTab===t.PageID?"#f8f7ff":"transparent",flexShrink:0}}>
-              {t.PageName}
-              <span onClick={e=>closeTab(e,t.PageID)}
-                style={{fontSize:14,color:"#94a3b8",lineHeight:1,marginTop:1}}>×</span>
-            </div>
-          ))}
+        {/* ── Sidebar ── */}
+        <div style={{width:220,minWidth:220,background:"#0f2d5a",display:"flex",flexDirection:"column",height:"100%"}}>
+          <div style={{flex:1,overflowY:"auto",padding:"0.75rem 0"}}>
+            {Object.values(groups).map(g => (
+              <div key={g.GroupID}>
+                <div onClick={()=>toggleGroup(g.GroupID)}
+                  style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 16px",cursor:"pointer",color:"#93c5fd",fontSize:11,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",userSelect:"none"}}>
+                  <span>{g.GroupName}</span>
+                  <i className={`ti ti-chevron-${collapsed[g.GroupID]?"right":"down"}`}
+                    style={{fontSize:13}} aria-hidden="true"></i>
+                </div>
+                {!collapsed[g.GroupID] && g.pages.map(p => (
+                  <div key={p.PageID} onClick={()=>openTab(p)}
+                    style={{display:"flex",alignItems:"center",gap:9,padding:"7px 16px 7px 24px",cursor:"pointer",fontSize:13,
+                      color: activeTab===p.PageID?"#fff":"#94a3b8",
+                      background: activeTab===p.PageID?"rgba(99,102,241,0.25)":"transparent",
+                      borderLeft: activeTab===p.PageID?"3px solid #818cf8":"3px solid transparent",
+                      transition:"all 0.15s"}}>
+                    <i className={`ti ${PAGE_ICONS[p.PageName] || "ti-file"}`}
+                      style={{fontSize:15,flexShrink:0}} aria-hidden="true"></i>
+                    {p.PageName}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Page content */}
-        <div style={{flex:1,overflow:"auto",padding:"1.5rem"}}>
-          {activeTab
-            ? <div style={{background:"#fff",borderRadius:12,padding:"2rem",border:"1px solid #e2e8f0"}}>
-                <h2 style={{fontSize:18,fontWeight:600,color:"#1e293b",marginBottom:8}}>
-                  {tabs.find(t=>t.PageID===activeTab)?.PageName}
-                </h2>
-                <p style={{fontSize:13,color:"#94a3b8"}}>Page content coming soon...</p>
-              </div>
-            : <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:"#94a3b8",fontSize:14}}>
-                Select a page to get started
-              </div>
-          }
+        {/* ── Main ── */}
+        <div style={{flex:1,display:"flex",flexDirection:"column",background:"#f1f5f9",overflow:"hidden"}}>
+
+          {/* Tab bar */}
+          <div style={{display:"flex",alignItems:"center",background:"#fff",borderBottom:"1px solid #e2e8f0",overflowX:"auto",minHeight:40,flexShrink:0}}>
+            {tabs.length === 0
+              ? <span style={{padding:"0 16px",fontSize:13,color:"#94a3b8"}}>Select a page from the sidebar</span>
+              : tabs.map(t => (
+                <div key={t.PageID} onClick={()=>setActiveTab(t.PageID)}
+                  style={{display:"flex",alignItems:"center",gap:8,padding:"0 14px",height:40,cursor:"pointer",fontSize:13,whiteSpace:"nowrap",
+                    borderBottom: activeTab===t.PageID?"2px solid #6366f1":"2px solid transparent",
+                    color: activeTab===t.PageID?"#6366f1":"#64748b",
+                    background: activeTab===t.PageID?"#f8f7ff":"transparent",flexShrink:0}}>
+                  <i className={`ti ${PAGE_ICONS[t.PageName] || "ti-file"}`}
+                    style={{fontSize:14}} aria-hidden="true"></i>
+                  {t.PageName}
+                  <span onClick={e=>closeTab(e,t.PageID)}
+                    style={{fontSize:15,color:"#94a3b8",lineHeight:1,marginTop:1}}>×</span>
+                </div>
+              ))
+            }
+          </div>
+
+          {/* Page content */}
+          <div style={{flex:1,overflow:"auto",padding:"1.5rem"}}>
+            {activeTab
+              ? <div style={{background:"#fff",borderRadius:12,padding:"2rem",border:"1px solid #e2e8f0"}}>
+                  <h2 style={{fontSize:18,fontWeight:600,color:"#1e293b",marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
+                    <i className={`ti ${PAGE_ICONS[activePageName] || "ti-file"}`}
+                      style={{fontSize:20,color:"#6366f1"}} aria-hidden="true"></i>
+                    {activePageName}
+                  </h2>
+                  {activeTab === 1 ? <Partners apiCall={apiCall} /> : activeTab === 3 ? <Clients apiCall={apiCall} /> : <p style={{fontSize:13,color:"#94a3b8"}}>Page content coming soon...</p>}
+                </div>
+              : <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:"#94a3b8",fontSize:14}}>
+                  Select a page to get started
+                </div>
+            }
+          </div>
         </div>
       </div>
     </div>
@@ -191,7 +224,6 @@ function Shell({ session, onLogout }) {
 // ─── App Root ────────────────────────────────────────────────────
 export default function YallaFixCP() {
   const [session, setSession] = useState(null);
-
   if (!session) return <LoginScreen onLogin={setSession} />;
   return <Shell session={session} onLogout={()=>setSession(null)} />;
 }
