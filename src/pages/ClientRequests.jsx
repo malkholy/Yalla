@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import useSortable from "../hooks/useSortable.jsx";
+import useKeyboardNav from "../hooks/useKeyboardNav.jsx";
 import ClientRequestDetail from "./ClientRequestDetail.jsx";
 import { ExportButtons } from "../components/PageWrapper.jsx";
 import FilterDropdown from "../components/FilterDropdown.jsx";
@@ -47,7 +49,10 @@ export default function ClientRequests({ apiCall }) {
     }
   }, [data.length]);
 
-  const filtered = data.filter(r => {
+  const { sorted, Th } = useSortable(data);
+  // useKeyboardNav moved below filtered
+
+  const filtered = sorted.filter(r => {
     const matchSearch =
       String(r.RequestNo||"").includes(search) ||
       (r.ClientName||"").toLowerCase().includes(search.toLowerCase()) ||
@@ -58,6 +63,7 @@ export default function ClientRequests({ apiCall }) {
     const matchService = filterService.length === 0 || filterService.includes(r.ServiceDescription);
     return matchSearch && matchState && matchBrand && matchService;
   });
+  const { rowProps } = useKeyboardNav(filtered, setSelected);
 
   // KPIs
   const total      = data.length;
@@ -89,7 +95,7 @@ export default function ClientRequests({ apiCall }) {
           { label:"Completed",      value:completed,                    color:"#a0f87f" },
           { label:"In Progress",    value:pending,                      color:"#fbbf24" },
           { label:"Canceled",       value:canceled,                     color:"#f87171" },
-          { label:"Total Amount",   value:"$"+totalAmount.toLocaleString(), color:"#38bdf8" },
+          { label:"Total Amount",   value:"SYP "+totalAmount.toLocaleString(), color:"#38bdf8" },
         ].map(k => (
           <div key={k.label} style={{background:"rgba(255,255,255,0.04)",borderRadius:10,border:"1px solid rgba(255,255,255,0.07)",padding:"1rem 1.25rem"}}>
             <div style={{fontSize:12,color:"rgba(255,255,255,0.35)",marginBottom:4}}>{k.label}</div>
@@ -132,24 +138,26 @@ export default function ClientRequests({ apiCall }) {
           : <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
               <thead>
                 <tr style={{background:"rgba(255,255,255,0.03)",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
-                  <th style={th}>Request No</th>
-                  <th style={th}>Date</th>
-                  <th style={th}>Client</th>
-                  <th style={th}>Partner</th>
-                  <th style={th}>Service</th>
-                  <th style={th}>Brand / Model</th>
-                  <th style={th}>Amount</th>
-                  <th style={th}>Rating</th>
-                  <th style={th}>Status</th>
+                  <Th col="RequestNo">Request No</Th>
+                  <Th col="RequestDate">Date</Th>
+                  <Th col="ClientName">Client</Th>
+                  <Th col="PartnerEnglishName">Partner</Th>
+                  <Th col="ServiceDescription">Service</Th>
+                  <Th col="BrandName">Brand / Model</Th>
+                  <Th col="TotalAmount">Amount</Th>
+                  <Th col="RankValue">Rating</Th>
+                  <Th col="StateDescription">Status</Th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0
                   ? <tr><td colSpan={9} style={{padding:"2rem",textAlign:"center",color:"rgba(255,255,255,0.25)"}}>No records found</td></tr>
-                  : filtered.map(r => (
-                    <tr key={r.RequestNo} style={{borderBottom:"1px solid rgba(255,255,255,0.04)",cursor:"pointer"}}
+                  : filtered.map((r, i) => (
+                    <tr key={i}
+                      style={{borderBottom:"1px solid rgba(255,255,255,0.04)",cursor:"pointer",background:"transparent"}}
                       onMouseEnter={e=>e.currentTarget.style.background="rgba(160,248,127,0.04)"}
-                      onMouseLeave={e=>e.currentTarget.style.background="transparent"} onClick={()=>setSelected(r)}>
+                      onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+                      onClick={()=>setSelected(r)}>
                       <td style={{...td,fontWeight:600,color:"#a0f87f"}}>#{r.RequestNo}</td>
                       <td style={{...td,color:"rgba(255,255,255,0.4)",fontSize:12}}>
                         {r.RequestDate ? new Date(r.RequestDate).toLocaleDateString() : "—"}
@@ -173,7 +181,7 @@ export default function ClientRequests({ apiCall }) {
                         <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",marginTop:2}}>{r.ProductModel}</div>
                       </td>
                       <td style={{...td,fontWeight:600,color:"#fbbf24"}}>
-                        ${parseFloat(r.TotalAmount||0).toLocaleString()}
+                        SYP {parseFloat(r.TotalAmount||0).toLocaleString()}
                       </td>
                       <td style={td}>
                         {r.RankValue > 0

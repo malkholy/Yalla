@@ -111,3 +111,40 @@ code {
 }
 .spin { animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Responsive tables */
+@media (max-width: 768px) {
+  .sh-page { padding: 0.75rem; }
+  
+  /* KPI grid */
+  .sh-page > div > div[style*="grid-template-columns:repeat(4"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .sh-page > div > div[style*="grid-template-columns:repeat(5"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .sh-page > div > div[style*="grid-template-columns:repeat(3"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Table scroll */
+  .sh-page div[style*="overflow:\"hidden\""],
+  .sh-page div[style*='overflow:"hidden"'] {
+    overflow-x: auto !important;
+  }
+
+  /* Header wrap */
+  .sh-page div[style*="justifyContent:\"space-between\""] {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .sh-page > div > div[style*="grid-template-columns:repeat"] {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .sh-tabbar .sh-tab span:not(.sh-tab-close) {
+    display: none;
+  }
+}

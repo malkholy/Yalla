@@ -209,10 +209,10 @@ export default function ClientRequestDetail({ request: initial, onBack, apiCall 
           <InfoItem icon="ti-map-pin"     label="Client Address" value={r.ClientAddress} full/>
           <InfoItem icon="ti-notes"       label="Client Note"    value={r.ClientNote} full/>
           <InfoItem icon="ti-notes"       label="Completion Note" value={r.ClientCompleteNote} full/>
-          <InfoItem icon="ti-cash"        label="Item Amount"    value={"$"+parseFloat(r.ItemAmount||0).toFixed(2)}/>
-          <InfoItem icon="ti-cash"        label="Fees Amount"    value={"$"+parseFloat(r.FeesAmount||0).toFixed(2)}/>
-          <InfoItem icon="ti-discount"    label="Discount"       value={"$"+parseFloat(r.DiscountAmount||0).toFixed(2)}/>
-          <InfoItem icon="ti-coin"        label="Total Amount"   value={"$"+parseFloat(r.TotalAmount||0).toFixed(2)}/>
+          <InfoItem icon="ti-cash"        label="Item Amount"    value={"SYP "+parseFloat(r.ItemAmount||0).toFixed(2)}/>
+          <InfoItem icon="ti-cash"        label="Fees Amount"    value={"SYP "+parseFloat(r.FeesAmount||0).toFixed(2)}/>
+          <InfoItem icon="ti-discount"    label="Discount"       value={"SYP "+parseFloat(r.DiscountAmount||0).toFixed(2)}/>
+          <InfoItem icon="ti-coin"        label="Total Amount"   value={"SYP "+parseFloat(r.TotalAmount||0).toFixed(2)}/>
         </div>
       )}
 
@@ -227,7 +227,7 @@ export default function ClientRequestDetail({ request: initial, onBack, apiCall 
           <InfoItem icon="ti-box"         label="Supplier"       value={r.ProductBrandNme}/>
           <InfoItem icon="ti-info-circle" label="Extra Info"     value={r.ExtrInfo}/>
           <InfoItem icon="ti-battery"     label="Battery Part"   value={r.BatteryPartNumber}/>
-          <InfoItem icon="ti-coin"        label="Price"          value={"$"+parseFloat(r.Price||0).toFixed(2)}/>
+          <InfoItem icon="ti-coin"        label="Price"          value={"SYP "+parseFloat(r.Price||0).toFixed(2)}/>
           <InfoItem icon="ti-device-tablet" label="Type"         value={r.ProductType}/>
         </div>
       )}
@@ -312,56 +312,6 @@ export default function ClientRequestDetail({ request: initial, onBack, apiCall 
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-        );
-      })()}
-      {tab==="location" && (() => {
-        const cLat = parseFloat(r.Expr2);
-        const cLng = parseFloat(r.Expr3);
-        const pLat = parseFloat(r.Latitude);
-        const pLng = parseFloat(r.Longitude);
-        const hasBoth = r.Expr2 && r.Expr3 && r.Latitude && r.Longitude && r.Expr2 !== "" && r.Latitude !== "";
-        const hasClient = r.Expr2 && r.Expr3 && r.Expr2 !== "";
-        const hasPartner = r.Latitude && r.Longitude && r.Latitude !== "";
-
-        let mapSrc2 = "";
-        if (hasBoth) {
-          const minLat = Math.min(cLat,pLat) - 0.02;
-          const maxLat = Math.max(cLat,pLat) + 0.02;
-          const minLng = Math.min(cLng,pLng) - 0.02;
-          const maxLng = Math.max(cLng,pLng) + 0.02;
-          mapSrc2 = `https://www.openstreetmap.org/export/embed.html?bbox=${minLng},${minLat},${maxLng},${maxLat}&layer=mapnik&marker=${cLat},${cLng}&marker=${pLat},${pLng}`;
-        } else if (hasClient) {
-          mapSrc2 = `https://www.openstreetmap.org/export/embed.html?bbox=${cLng-0.01},${cLat-0.01},${cLng+0.01},${cLat+0.01}&layer=mapnik&marker=${cLat},${cLng}`;
-        } else if (hasPartner) {
-          mapSrc2 = `https://www.openstreetmap.org/export/embed.html?bbox=${pLng-0.01},${pLat-0.01},${pLng+0.01},${pLat+0.01}&layer=mapnik&marker=${pLat},${pLng}`;
-        }
-
-        return (
-          <div style={{background:"rgba(255,255,255,0.03)",borderRadius:12,border:"1px solid rgba(255,255,255,0.07)",padding:"1.25rem"}}>
-            <div style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:"1rem"}}>Locations</div>
-            {mapSrc2
-              ? <iframe src={mapSrc2} style={{width:"100%",height:320,borderRadius:8,border:"1px solid rgba(255,255,255,0.1)",marginBottom:"1rem"}} title="Locations map"></iframe>
-              : <div style={{background:"rgba(255,255,255,0.03)",borderRadius:8,height:120,display:"flex",alignItems:"center",justifyContent:"center",color:"rgba(255,255,255,0.25)",fontSize:13,border:"1px dashed rgba(255,255,255,0.1)",marginBottom:"1rem"}}>
-                  <i className="ti ti-map-off" style={{fontSize:20,marginRight:8}} aria-hidden="true"></i>No coordinates available
-                </div>
-            }
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              <div style={{background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px 12px",display:"flex",alignItems:"flex-start",gap:8}}>
-                <i className="ti ti-user" style={{fontSize:14,color:"#a0f87f",marginTop:1,flexShrink:0}} aria-hidden="true"></i>
-                <div>
-                  <div style={{fontSize:10,color:"rgba(255,255,255,0.3)",marginBottom:2}}>CLIENT</div>
-                  <span style={{fontSize:13,color:"rgba(255,255,255,0.6)"}}>{r.ClientAddress||"No address"}</span>
-                </div>
-              </div>
-              <div style={{background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px 12px",display:"flex",alignItems:"flex-start",gap:8}}>
-                <i className="ti ti-users" style={{fontSize:14,color:"#38bdf8",marginTop:1,flexShrink:0}} aria-hidden="true"></i>
-                <div>
-                  <div style={{fontSize:10,color:"rgba(255,255,255,0.3)",marginBottom:2}}>PARTNER</div>
-                  <span style={{fontSize:13,color:"rgba(255,255,255,0.6)"}}>{r.PartnerAddress||"No address"}</span>
-                </div>
-              </div>
             </div>
           </div>
         );

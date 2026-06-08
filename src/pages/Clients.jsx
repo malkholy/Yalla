@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import useSortable from "../hooks/useSortable.jsx";
+import useKeyboardNav from "../hooks/useKeyboardNav.jsx";
 import { ExportButtons } from "../components/PageWrapper.jsx";
 import ClientDetail from "./ClientDetail.jsx";
 
@@ -19,10 +21,14 @@ export default function Clients({ apiCall }) {
 
   useEffect(() => { load(); }, []);
 
-  const filtered = data.filter(r =>
+  const { sorted, Th } = useSortable(data);
+  // useKeyboardNav moved below filtered
+
+  const filtered = sorted.filter(r =>
     (r.ClientName || "").toLowerCase().includes(search.toLowerCase()) ||
     (r.ClientMobile || "").includes(search)
   );
+  const { rowProps } = useKeyboardNav(filtered, setSelectedClient);
 
   const totalOrders     = data.reduce((s,r) => s + (r.TotalOrders||0), 0);
   const totalCompleted  = data.reduce((s,r) => s + (r.TotalCompletedOrders||0), 0);
@@ -78,22 +84,19 @@ export default function Clients({ apiCall }) {
           : <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
               <thead>
                 <tr style={{background:"#152338",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
-                  <th style={th}>#</th>
-                  <th style={th}>Client</th>
-                  <th style={th}>Mobile</th>
-                  <th style={th}>Total Orders</th>
-                  <th style={th}>Completed</th>
-                  <th style={th}>Not Completed</th>
+                  <Th col="ClientID">#</Th>
+                  <Th col="ClientName">Client</Th>
+                  <Th col="ClientMobile">Mobile</Th>
+                  <Th col="TotalOrders">Total Orders</Th>
+                  <Th col="TotalCompletedOrders">Completed</Th>
+                  <Th col="TotalNotCompletedOrders">Not Completed</Th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0
                   ? <tr><td colSpan={6} style={{padding:"2rem",textAlign:"center",color:"rgba(255,255,255,0.3)"}}>No records found</td></tr>
-                  : filtered.map(r => (
-                    <tr key={r.ClientID} style={{borderBottom:"1px solid rgba(255,255,255,0.04)",cursor:"pointer"}}
-                      onMouseEnter={e=>e.currentTarget.style.background="rgba(160,248,127,0.05)"}
-                      onMouseLeave={e=>e.currentTarget.style.background="transparent"}
-                      onClick={()=>setSelectedClient(r)}>
+                  : filtered.map((r, i) => (
+                    <tr key={i} {...rowProps(i, r)}>
                       <td style={td}>{r.ClientID}</td>
                       <td style={td}>
                         <div style={{display:"flex",alignItems:"center",gap:10}}>

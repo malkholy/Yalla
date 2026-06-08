@@ -1,3 +1,5 @@
+import useSortable from "../hooks/useSortable.jsx";
+import useKeyboardNav from "../hooks/useKeyboardNav.jsx";
 import PartnerDetail from "./PartnerDetail.jsx";
 import { ExportButtons } from "../components/PageWrapper.jsx";
 import { useState, useEffect, useRef } from "react";
@@ -26,10 +28,14 @@ export default function Partners({ apiCall }) {
 
   useEffect(() => { load(); }, []);
 
-  const filtered = data.filter(r =>
+  const { sorted, Th } = useSortable(data);
+  // useKeyboardNav moved below filtered
+
+  const filtered = sorted.filter(r =>
     (r.PartnerEnglishName || "").toLowerCase().includes(search.toLowerCase()) ||
     (r.MobileNo || "").includes(search)
   );
+  const { rowProps } = useKeyboardNav(filtered, setSelectedPartner);
 
   // KPIs
   const total    = data.length;
@@ -89,21 +95,19 @@ export default function Partners({ apiCall }) {
           : <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
               <thead>
                 <tr style={{background:"#152338",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
-                  <th style={th}>#</th>
-                  <th style={th}>Partner</th>
-                  <th style={th}>Mobile</th>
-                  <th style={th}>Address</th>
-                  <th style={th}>Status</th>
-                  <th style={th}>Last Update</th>
+                  <Th col="PartnerID">#</Th>
+                  <Th col="PartnerEnglishName">Partner</Th>
+                  <Th col="MobileNo">Mobile</Th>
+                  <Th col="PartnerAddress">Address</Th>
+                  <Th col="Status">Status</Th>
+                  <Th col="LastMaintDate">Last Update</Th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0
                   ? <tr><td colSpan={6} style={{padding:"2rem",textAlign:"center",color:"rgba(255,255,255,0.3)"}}>No records found</td></tr>
-                  : filtered.map(r => (
-                    <tr key={r.PartnerID} style={{borderBottom:"1px solid rgba(255,255,255,0.04)"}}
-                      onMouseEnter={e=>e.currentTarget.style.background="rgba(160,248,127,0.05)"}
-                      onMouseLeave={e=>e.currentTarget.style.background="transparent"} onClick={()=>setSelectedPartner(r)}>
+                  : filtered.map((r, i) => (
+                    <tr key={i} {...rowProps(i, r)}>
                       <td style={td}>{r.PartnerID}</td>
                       <td style={td}>
                         <div style={{display:"flex",alignItems:"center",gap:10}}>

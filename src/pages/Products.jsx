@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import useSortable from "../hooks/useSortable.jsx";
+import ExcelImport from "../components/ExcelImport.jsx";
 import { ExportButtons } from "../components/PageWrapper.jsx";
 import FilterDropdown from "../components/FilterDropdown.jsx";
 
@@ -8,6 +10,7 @@ export default function Products({ apiCall }) {
   const [search, setSearch]   = useState("");
   const [filterCat, setFilterCat] = useState([]);
   const [filterBrand, setFilterBrand] = useState([]);
+  const [showImport, setShowImport] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -24,7 +27,8 @@ export default function Products({ apiCall }) {
   const cats   = ["All", ...new Set(data.map(r => r.ProductCat1).filter(Boolean))];
   const brands = ["All", ...new Set(data.map(r => r.BrandName).filter(Boolean))];
 
-  const filtered = data.filter(r => {
+  const { sorted, Th } = useSortable(data);
+  const filtered = sorted.filter(r => {
     const matchSearch = (r.ProductID||"").toLowerCase().includes(search.toLowerCase()) ||
       (r.ProductModel||"").toLowerCase().includes(search.toLowerCase()) ||
       (r.BrandName||"").toLowerCase().includes(search.toLowerCase());
@@ -51,13 +55,14 @@ export default function Products({ apiCall }) {
 
   return (
     <div id="products-table">
+      {showImport && <ExcelImport apiCall={apiCall} onDone={()=>{setShowImport(false);load();}}/>}
       {/* KPI Cards */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:"1.25rem"}}>
         {[
           { label:"Total Products", value:totalProducts, color:"#a0f87f" },
           { label:"Brands",         value:totalBrands,   color:"#38bdf8" },
           { label:"Categories",     value:totalCats,     color:"#c084fc" },
-          { label:"Avg Price",      value:"$"+avgPrice,  color:"#fbbf24" },
+          { label:"Avg Price",      value:"SYP "+avgPrice,  color:"#fbbf24" },
         ].map(k => (
           <div key={k.label} style={{background:"rgba(255,255,255,0.04)",borderRadius:10,border:"1px solid rgba(255,255,255,0.07)",padding:"1rem 1.25rem"}}>
             <div style={{fontSize:12,color:"rgba(255,255,255,0.35)",marginBottom:4}}>{k.label}</div>
@@ -88,6 +93,10 @@ export default function Products({ apiCall }) {
             style={{display:"flex",alignItems:"center",gap:5,height:34,padding:"0 12px",background:"#573ad2",color:"#fff",border:"none",borderRadius:8,fontSize:13,cursor:"pointer"}}>
             <i className={`ti ti-refresh${loading?" spin":""}`} style={{fontSize:14}} aria-hidden="true"></i>Refresh
           </button>
+          <button onClick={()=>setShowImport(true)}
+            style={{display:"flex",alignItems:"center",gap:5,height:34,padding:"0 12px",background:"rgba(160,248,127,0.1)",color:"#a0f87f",border:"1px solid rgba(160,248,127,0.2)",borderRadius:8,fontSize:13,cursor:"pointer"}}>
+            <i className="ti ti-file-import" style={{fontSize:14}} aria-hidden="true"></i>Import Excel
+          </button>
           <ExportButtons exportId="products-table" filename="Products" excelData={filtered} excelColumns={excelColumns}/>
         </div>
       </div>
@@ -101,21 +110,21 @@ export default function Products({ apiCall }) {
           : <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
               <thead>
                 <tr style={{background:"rgba(255,255,255,0.03)",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
-                  <th style={th}>Product ID</th>
-                  <th style={th}>Category</th>
-                  <th style={th}>Brand</th>
-                  <th style={th}>Model</th>
-                  <th style={th}>Type</th>
-                  <th style={th}>Supplier</th>
-                  <th style={th}>Color</th>
-                  <th style={th}>Price</th>
+                  <Th col="ProductID">Product ID</Th>
+                  <Th col="ProductCat1">Category</Th>
+                  <Th col="BrandName">Brand</Th>
+                  <Th col="ProductModel">Model</Th>
+                  <Th col="ProductType">Type</Th>
+                  <Th col="ProductBrandNme">Supplier</Th>
+                  <Th col="ProductColor">Color</Th>
+                  <Th col="Price">Price</Th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0
                   ? <tr><td colSpan={8} style={{padding:"2rem",textAlign:"center",color:"rgba(255,255,255,0.25)"}}>No records found</td></tr>
                   : filtered.map(r => (
-                    <tr key={r.ProductID} style={{borderBottom:"1px solid rgba(255,255,255,0.04)",cursor:"pointer"}}
+                    <tr key={i} style={{borderBottom:"1px solid rgba(255,255,255,0.04)",cursor:"pointer"}}
                       onMouseEnter={e=>e.currentTarget.style.background="rgba(160,248,127,0.04)"}
                       onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                       <td style={{...td,fontWeight:600,color:"#a0f87f"}}>{r.ProductID}</td>
@@ -133,7 +142,7 @@ export default function Products({ apiCall }) {
                       </td>
                       <td style={td}>{r.ProductBrandNme||"—"}</td>
                       <td style={td}>{r.ProductColor||"—"}</td>
-                      <td style={{...td,fontWeight:600,color:"#fbbf24"}}>${parseFloat(r.Price||0).toFixed(2)}</td>
+                      <td style={{...td,fontWeight:600,color:"#fbbf24"}}>SYP ${parseFloat(r.Price||0).toFixed(2)}</td>
                     </tr>
                   ))
                 }
