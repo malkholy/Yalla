@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import useSortable from "../hooks/useSortable.jsx";
 
 const ORDER_STYLE = {
   "Completed":  { background:"rgba(160,248,127,0.15)", color:"#a0f87f" },
@@ -21,11 +22,15 @@ export default function ClientDetail({ client, onBack, apiCall }) {
       try {
         const d = await apiCall({ Operation: "Get Clients", LineData: String(client.ClientID) });
         setOrders(d?.List1 || d?.List || []);
-      } catch {}
+      } catch (error) {
+        console.error("Failed to load client orders:", error);
+      }
       setLoading(false);
     }
     loadOrders();
   }, [client.ClientID]);
+
+  const { sorted, Th } = useSortable(orders);
 
   const initials = (client.ClientName || "?").slice(0,2).toUpperCase();
   const totalAmount = orders.reduce((sum, o) => sum + (parseFloat(o.TotalAmount) || 0), 0);
@@ -89,21 +94,21 @@ export default function ClientDetail({ client, onBack, apiCall }) {
           : <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
               <thead>
                 <tr style={{background:"#152338",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
-                  <th style={th}>Request No</th>
-                  <th style={th}>Date</th>
-                  <th style={th}>Service</th>
-                  <th style={th}>Category</th>
-                  <th style={th}>Brand</th>
-                  <th style={th}>Type</th>
-                  <th style={th}>Amount</th>
-                  <th style={th}>Rating</th>
-                  <th style={th}>Status</th>
+                  <Th col="RequestNo">Request No</Th>
+                  <Th col="RequestDate">Date</Th>
+                  <Th col="ServiceDescription">Service</Th>
+                  <Th col="ProductCat1">Category</Th>
+                  <Th col="BrandName">Brand</Th>
+                  <Th col="ProductBrandNme">Type</Th>
+                  <Th col="TotalAmount">Amount</Th>
+                  <Th col="RankValue">Rating</Th>
+                  <Th col="Status">Status</Th>
                 </tr>
               </thead>
               <tbody>
                 {orders.length === 0
-                  ? <tr><td colSpan={8} style={{padding:"2rem",textAlign:"center",color:"rgba(255,255,255,0.3)"}}>No orders found</td></tr>
-                  : orders.map(o => (
+                  ? <tr><td colSpan={9} style={{padding:"2rem",textAlign:"center",color:"rgba(255,255,255,0.3)"}}>No orders found</td></tr>
+                  : sorted.map(o => (
                     <tr key={o.RequestNo} style={{borderBottom:"1px solid rgba(255,255,255,0.04)"}}
                       onMouseEnter={e=>e.currentTarget.style.background="rgba(160,248,127,0.05)"}
                       onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
@@ -144,5 +149,4 @@ export default function ClientDetail({ client, onBack, apiCall }) {
   );
 }
 
-const th = {padding:"10px 14px",textAlign:"left",fontWeight:600,color:"rgba(255,255,255,0.55)",fontSize:12,textTransform:"uppercase",letterSpacing:"0.05em"};
 const td = {padding:"10px 14px",color:"rgba(255,255,255,0.75)",verticalAlign:"middle"};
