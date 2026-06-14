@@ -50,6 +50,8 @@ export default function Products({ apiCall }) {
     {label:"Model",       key:"ProductModel"},
     {label:"Color",       key:"ProductColor"},
     {label:"Supplier",    key:"ProductBrandNme"},
+    {label:"Whole Sale",  key:"WholeSale"},
+    {label:"Selling Price", key:"SellingPrice"},
     {label:"Price",       key:"Price"},
   ];
 
@@ -117,12 +119,14 @@ export default function Products({ apiCall }) {
                   <Th col="ProductType">Type</Th>
                   <Th col="ProductBrandNme">Supplier</Th>
                   <Th col="ProductColor">Color</Th>
+                  <Th col="WholeSale">Whole Sale</Th>
+                  <Th col="SellingPrice">Selling Price</Th>
                   <Th col="Price">Price</Th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0
-                  ? <tr><td colSpan={8} style={{padding:"2rem",textAlign:"center",color:"rgba(255,255,255,0.25)"}}>No records found</td></tr>
+                  ? <tr><td colSpan={10} style={{padding:"2rem",textAlign:"center",color:"rgba(255,255,255,0.25)"}}>No records found</td></tr>
                   : filtered.map((r, i) => (
                     <tr key={i} style={{borderBottom:"1px solid rgba(255,255,255,0.04)",cursor:"pointer"}}
                       onMouseEnter={e=>e.currentTarget.style.background="rgba(160,248,127,0.04)"}
@@ -142,6 +146,8 @@ export default function Products({ apiCall }) {
                       </td>
                       <td style={td}>{r.ProductBrandNme||"—"}</td>
                       <td style={td}>{r.ProductColor||"—"}</td>
+                      <td style={{...td,fontWeight:600,color:"#fbbf24"}}>SYP ${parseFloat(r.WholeSale||0).toFixed(2)}</td>
+                      <td style={{...td,fontWeight:600,color:"#fbbf24"}}>SYP ${parseFloat(r.SellingPrice||0).toFixed(2)}</td>
                       <td style={{...td,fontWeight:600,color:"#fbbf24"}}>SYP ${parseFloat(r.Price||0).toFixed(2)}</td>
                     </tr>
                   ))
