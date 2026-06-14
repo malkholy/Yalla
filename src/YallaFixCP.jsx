@@ -3,6 +3,7 @@ import Clients from "./pages/Clients.jsx";
 import Products from "./pages/Products.jsx";
 import ClientRequests from "./pages/ClientRequests.jsx";
 import ServiceType from "./pages/ServiceType.jsx";
+import SystemParameters from "./pages/SystemParameters.jsx";
 import { useState } from "react";
 
 const API_URL = "https://sila.silasystem.com:8000/General/GeneralAPI/";
@@ -30,6 +31,7 @@ const PAGE_ICONS = {
   "Partners":  "ti-users",
   "Products":  "ti-box",
   "Clients":   "ti-building",
+  "System Parameters": "ti-settings",
 };
 
 function getInitials(name) {
@@ -287,7 +289,7 @@ function Shell({ session, onLogout }) {
               }
             </div>
             <div className="sh-page">
-              {activeTab===1 ? <Partners apiCall={apiCall}/> : activeTab===2 ? <Products apiCall={apiCall}/> : activeTab===3 ? <Clients apiCall={apiCall}/> : activeTab===4 ? <ClientRequests apiCall={apiCall}/> : activeTab===5 ? <ServiceType apiCall={apiCall}/> :
+              {activeTab===1 ? <Partners apiCall={apiCall}/> : activeTab===2 ? <Products apiCall={apiCall}/> : activeTab===3 ? <Clients apiCall={apiCall}/> : activeTab===4 ? <ClientRequests apiCall={apiCall}/> : activeTab===5 ? <ServiceType apiCall={apiCall}/> : activeTab===6 ? <SystemParameters apiCall={apiCall}/> :
                activeTab!==null ?
                 <div style={{background:"rgba(255,255,255,0.03)",borderRadius:12,padding:"2rem",border:"1px solid rgba(255,255,255,0.07)"}}>
                   <h2 style={{fontSize:16,fontWeight:600,color:"#fff",marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
@@ -310,9 +312,21 @@ function Shell({ session, onLogout }) {
   );
 }
 
-// ─── App Root ────────────────────────────────────────────────────
 export default function YallaFixCP() {
   const [session, setSession] = useState(null);
-  if (!session) return <LoginScreen onLogin={setSession} />;
+  
+  function handleLogin(sess) {
+    if (sess && sess.nav && !sess.nav.some(p => p.PageName === "System Parameters")) {
+      sess.nav.push({
+        GroupID: 1,
+        GroupName: "System Masters",
+        PageID: 6,
+        PageName: "System Parameters"
+      });
+    }
+    setSession(sess);
+  }
+
+  if (!session) return <LoginScreen onLogin={handleLogin} />;
   return <Shell session={session} onLogout={()=>setSession(null)} />;
 }

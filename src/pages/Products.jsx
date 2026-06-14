@@ -123,7 +123,7 @@ export default function Products({ apiCall }) {
               <tbody>
                 {filtered.length === 0
                   ? <tr><td colSpan={8} style={{padding:"2rem",textAlign:"center",color:"rgba(255,255,255,0.25)"}}>No records found</td></tr>
-                  : filtered.map(r => (
+                  : filtered.map((r, i) => (
                     <tr key={i} style={{borderBottom:"1px solid rgba(255,255,255,0.04)",cursor:"pointer"}}
                       onMouseEnter={e=>e.currentTarget.style.background="rgba(160,248,127,0.04)"}
                       onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
