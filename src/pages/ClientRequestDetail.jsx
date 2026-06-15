@@ -104,6 +104,7 @@ export default function ClientRequestDetail({ request: initial, onBack, apiCall 
   const [r, setR]           = useState(initial);
   const [loading, setLoading] = useState(false);
   const [tab, setTab]         = useState("info");
+  const [serviceTypes, setServiceTypes] = useState([]);
 
   useEffect(() => {
     async function load() {
@@ -111,6 +112,9 @@ export default function ClientRequestDetail({ request: initial, onBack, apiCall 
       try {
         const d = await apiCall({ Operation: "Get Clients Requests", LineData: String(initial.RequestNo) });
         if (d?.List0?.[0]) setR(d.List0[0]);
+
+        const s = await apiCall({ Operation: "Get Service Type" });
+        if (s?.List) setServiceTypes(s.List);
       } catch {}
       setLoading(false);
     }
@@ -119,6 +123,9 @@ export default function ClientRequestDetail({ request: initial, onBack, apiCall 
 
   const status = r.StateDescription?.trim();
   const hasCoords = r.Expr2 && r.Expr3 && r.Expr2 !== "" && r.Expr3 !== "";
+
+  const serviceTypeObj = serviceTypes.find(t => t.ServiceTypeID === r.ServiceTypeID);
+  const serviceTypeName = serviceTypeObj ? serviceTypeObj.ServiceName : "—";
   const mapSrc = hasCoords
     ? `https://www.openstreetmap.org/export/embed.html?bbox=${parseFloat(r.Expr3)-0.01},${parseFloat(r.Expr2)-0.01},${parseFloat(r.Expr3)+0.01},${parseFloat(r.Expr2)+0.01}&layer=mapnik&marker=${r.Expr2},${r.Expr3}`
     : "";
@@ -204,7 +211,8 @@ export default function ClientRequestDetail({ request: initial, onBack, apiCall 
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
           <InfoItem icon="ti-user"        label="Client"         value={r.ClientName}/>
           <InfoItem icon="ti-phone"       label="Client Mobile"  value={r.ClientMobile}/>
-          <InfoItem icon="ti-tools"       label="Service Type"   value={r.ServiceDescription}/>
+          <InfoItem icon="ti-tools"       label="Service Type"   value={serviceTypeName}/>
+          <InfoItem icon="ti-notes"       label="Service Description" value={r.ServiceDescription}/>
           <InfoItem icon="ti-tag"         label="Service Level"  value={r.TypeDescription||r.ServiceDescription}/>
           <InfoItem icon="ti-map-pin"     label="Client Address" value={r.ClientAddress} full/>
           <InfoItem icon="ti-notes"       label="Client Note"    value={r.ClientNote} full/>
