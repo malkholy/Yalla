@@ -108,7 +108,7 @@ export default function Products({ apiCall }) {
   const totalProducts = data.length;
   const totalBrands   = new Set(data.map(r => r.BrandName).filter(Boolean)).size;
   const totalCats     = new Set(data.map(r => r.ProductCat1).filter(Boolean)).size;
-  const avgPrice      = data.length ? (data.reduce((s,r) => s + (parseFloat(r.Price)||0), 0) / data.length).toFixed(2) : "0";
+  const avgPrice      = data.length ? (data.reduce((s,r) => s + (parseFloat(r.Price)||0), 0) / data.length).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00";
 
   const excelColumns = [
     {label:"Product ID",  key:"ProductID"},
@@ -478,9 +478,9 @@ export default function Products({ apiCall }) {
                       </td>
                       <td style={td}>{r.ProductBrandNme||"—"}</td>
                       <td style={td}>{r.ProductColor||"—"}</td>
-                      <td style={{...td,fontWeight:600,color:"#fbbf24"}}>{parseFloat(r.WholeSale||0).toFixed(2)}</td>
-                      <td style={{...td,fontWeight:600,color:"#fbbf24"}}>{parseFloat(r.SellingPrice||0).toFixed(2)}</td>
-                      <td style={{...td,fontWeight:600,color:"#fbbf24"}}>{parseFloat(r.Price||0).toFixed(2)}</td>
+                      <td style={{...td,fontWeight:600,color:"#fbbf24"}}>{parseFloat(r.WholeSale||0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                      <td style={{...td,fontWeight:600,color:"#fbbf24"}}>{parseFloat(r.SellingPrice||0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                      <td style={{...td,fontWeight:600,color:"#fbbf24"}}>{parseFloat(r.Price||0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                       <td style={td}>
                         <button onClick={()=>openEdit(r)}
                           style={{display:"flex",alignItems:"center",gap:5,height:28,padding:"0 10px",background:"rgba(160,248,127,0.08)",color:"#a0f87f",border:"1px solid rgba(160,248,127,0.2)",borderRadius:7,fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>
