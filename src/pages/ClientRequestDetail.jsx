@@ -168,7 +168,7 @@ export default function ClientRequestDetail({ request: initial, onBack, apiCall 
               </span>
             )}
             <span style={{background:"rgba(56,189,248,0.12)",color:"#38bdf8",borderRadius:20,padding:"5px 14px",fontSize:13,fontWeight:600}}>
-              ${parseFloat(r.TotalAmount||0).toLocaleString()}
+              {parseFloat(r.TotalAmount||0).toLocaleString()}
             </span>
           </div>
         </div>
@@ -209,10 +209,10 @@ export default function ClientRequestDetail({ request: initial, onBack, apiCall 
           <InfoItem icon="ti-map-pin"     label="Client Address" value={r.ClientAddress} full/>
           <InfoItem icon="ti-notes"       label="Client Note"    value={r.ClientNote} full/>
           <InfoItem icon="ti-notes"       label="Completion Note" value={r.ClientCompleteNote} full/>
-          <InfoItem icon="ti-cash"        label="Item Amount"    value={"SYP "+parseFloat(r.ItemAmount||0).toFixed(2)}/>
-          <InfoItem icon="ti-cash"        label="Fees Amount"    value={"SYP "+parseFloat(r.FeesAmount||0).toFixed(2)}/>
-          <InfoItem icon="ti-discount"    label="Discount"       value={"SYP "+parseFloat(r.DiscountAmount||0).toFixed(2)}/>
-          <InfoItem icon="ti-coin"        label="Total Amount"   value={"SYP "+parseFloat(r.TotalAmount||0).toFixed(2)}/>
+          <InfoItem icon="ti-cash"        label="Item Amount"    value={parseFloat(r.ItemAmount||0).toFixed(2)}/>
+          <InfoItem icon="ti-cash"        label="Fees Amount"    value={parseFloat(r.FeesAmount||0).toFixed(2)}/>
+          <InfoItem icon="ti-discount"    label="Discount"       value={parseFloat(r.DiscountAmount||0).toFixed(2)}/>
+          <InfoItem icon="ti-coin"        label="Total Amount"   value={parseFloat(r.TotalAmount||0).toFixed(2)}/>
         </div>
       )}
 
@@ -227,7 +227,7 @@ export default function ClientRequestDetail({ request: initial, onBack, apiCall 
           <InfoItem icon="ti-box"         label="Supplier"       value={r.ProductBrandNme}/>
           <InfoItem icon="ti-info-circle" label="Extra Info"     value={r.ExtrInfo}/>
           <InfoItem icon="ti-battery"     label="Battery Part"   value={r.BatteryPartNumber}/>
-          <InfoItem icon="ti-coin"        label="Price"          value={"SYP "+parseFloat(r.Price||0).toFixed(2)}/>
+          <InfoItem icon="ti-coin"        label="Price"          value={parseFloat(r.Price||0).toFixed(2)}/>
           <InfoItem icon="ti-device-tablet" label="Type"         value={r.ProductType}/>
         </div>
       )}

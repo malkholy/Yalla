@@ -1,30 +1,33 @@
 import { useState, useRef } from "react";
 import * as XLSX from "xlsx";
 
-// Map Excel columns to SP fields
-const COL_MAP = {
-  "Code":                              "ProductID",
-  "Battary/LCD":                       "ProductCat1",
-  "Mobile/TAB":                        "ProductType",
-  "Brand":                             "BrandName",
-  "Compatbility":                      "ProductModel",
-  "Colour":                            "ProductColor",
-  "Quality":                           "ProductBrandNme",
-  "Part ID":                           "BatteryPartNumber",
-  "Capacity(for battary)/Rank( for LCD)": "ExtrInfo",
-  "WholeSale":                         "WholeSale",
-  "SellingPrice":                      "SellingPrice",
-  "Price":                             "Price",
-};
+const PRODUCT_FIELDS = [
+  { key: "ProductID",         label: "Product ID (Code)", required: true },
+  { key: "BatteryPartNumber", label: "Part ID" },
+  { key: "ProductBrandNme",   label: "Quality (Supplier)" },
+  { key: "ProductModel",      label: "Compatibility (Model)" },
+  { key: "ProductCat1",       label: "Category (Battery/LCD)" },
+  { key: "ProductType",       label: "Type (Mobile/TAB)" },
+  { key: "BrandName",         label: "Brand" },
+  { key: "ProductColor",      label: "Colour" },
+  { key: "ExtrInfo",          label: "Capacity/Rank" },
+  { key: "WholeSale",         label: "Whole Sale Price" },
+  { key: "SellingPrice",      label: "Selling Price" },
+  { key: "Price",             label: "Price" },
+  { key: "ImageURL",          label: "Image URL" },
+];
 
 export default function ExcelImport({ apiCall, onDone }) {
   const [rows, setRows]         = useState([]);
+  const [sheetData, setSheetData] = useState([]);
+  const [excelHeaders, setExcelHeaders] = useState([]);
+  const [columnMapping, setColumnMapping] = useState({});
   const [fileName, setFileName] = useState("");
   const [importing, setImporting] = useState(false);
   const [result, setResult]     = useState(null);
   const [error, setError]       = useState("");
-  const [step, setStep]         = useState("upload");
-  const [showAllPreview, setShowAllPreview] = useState(false); // upload | preview | done
+  const [step, setStep]         = useState("upload"); // upload | map | preview | done
+  const [showAllPreview, setShowAllPreview] = useState(false);
   const fileRef = useRef();
 
   function handleFile(file) {
@@ -36,9 +39,17 @@ export default function ExcelImport({ apiCall, onDone }) {
       try {
         const wb = XLSX.read(e.target.result, { type: "binary" });
         const ws = wb.Sheets[wb.SheetNames[0]];
-        const raw = XLSX.utils.sheet_to_json(ws, { defval: "" });
         
-        // Define robust aliases for headers (case-insensitive, trimmed)
+        // Extract headers from first row of data
+        const sheetRows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+        const firstRow = sheetRows[0] || [];
+        const headers = firstRow.map(h => String(h).trim()).filter(Boolean);
+        setExcelHeaders(headers);
+
+        const raw = XLSX.utils.sheet_to_json(ws, { defval: "" });
+        setSheetData(raw);
+
+        // Pre-match headers to initialize mapping
         const COLUMN_HEADERS_MAP = {
           ProductID: ["code", "product id", "productid"],
           BatteryPartNumber: ["part id", "partid", "part no", "partnumber", "part number"],
@@ -52,64 +63,20 @@ export default function ExcelImport({ apiCall, onDone }) {
           WholeSale: ["wholesale", "whole sale", "wholesale price"],
           SellingPrice: ["sellingprice", "selling price", "selling price price"],
           Price: ["price"],
+          ImageURL: ["imageurl", "image url", "image", "url", "picture"],
         };
 
-        // Map columns
-        const mapped = raw.map(r => {
-          // Normalize row keys to lowercase and trimmed
-          const normalizedRow = {};
-          for (const [k, v] of Object.entries(r)) {
-            normalizedRow[String(k).trim().toLowerCase()] = v;
-          }
-
-          const obj = {};
-          
-          const getValue = (aliases) => {
-            for (const alias of aliases) {
-              if (normalizedRow[alias] !== undefined) {
-                return String(normalizedRow[alias]).trim();
-              }
-            }
-            return "";
-          };
-
-          obj["ProductID"] = getValue(COLUMN_HEADERS_MAP.ProductID);
-          obj["BatteryPartNumber"] = getValue(COLUMN_HEADERS_MAP.BatteryPartNumber);
-          obj["ProductBrandNme"] = getValue(COLUMN_HEADERS_MAP.ProductBrandNme);
-          obj["ProductModel"] = getValue(COLUMN_HEADERS_MAP.ProductModel);
-          obj["ProductCat1"] = getValue(COLUMN_HEADERS_MAP.ProductCat1);
-          obj["ProductType"] = getValue(COLUMN_HEADERS_MAP.ProductType);
-          obj["BrandName"] = getValue(COLUMN_HEADERS_MAP.BrandName);
-          obj["ProductColor"] = getValue(COLUMN_HEADERS_MAP.ProductColor);
-          obj["ExtrInfo"] = getValue(COLUMN_HEADERS_MAP.ExtrInfo);
-          obj["WholeSale"] = parseFloat(String(getValue(COLUMN_HEADERS_MAP.WholeSale) || "0").replace(/[^0-9.]/g, "")) || 0;
-          obj["SellingPrice"] = parseFloat(String(getValue(COLUMN_HEADERS_MAP.SellingPrice) || "0").replace(/[^0-9.]/g, "")) || 0;
-
-          // For Price, exact match is preferred to avoid matching "wholesale price"
-          if (normalizedRow["price"] !== undefined) {
-            obj["Price"] = parseFloat(String(normalizedRow["price"] || "0").replace(/[^0-9.]/g, "")) || 0;
-          } else {
-            obj["Price"] = parseFloat(String(getValue(COLUMN_HEADERS_MAP.Price) || "0").replace(/[^0-9.]/g, "")) || 0;
-          }
-
-          return obj;
-        }).filter(r => r.ProductID); // skip empty rows
-
-        // Sanitize - ensure all values are safe strings, stripping control characters
-        const sanitized = mapped.map(r => {
-          const clean = {};
-          for (const [k, v] of Object.entries(r)) {
-            if (typeof v === 'string') {
-              clean[k] = v.replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
-            } else {
-              clean[k] = v;
-            }
-          }
-          return clean;
+        const initialMap = {};
+        PRODUCT_FIELDS.forEach(field => {
+          const aliases = COLUMN_HEADERS_MAP[field.key] || [];
+          const matched = headers.find(h => {
+            const cleanH = h.toLowerCase();
+            return aliases.some(alias => cleanH === alias.toLowerCase() || cleanH.includes(alias.toLowerCase()));
+          });
+          initialMap[field.key] = matched || "";
         });
-
-        setRows(sanitized);
-        setStep("preview");
+        setColumnMapping(initialMap);
+        setStep("map");
       } catch(err) {
         setError("Failed to read Excel file: " + err.message);
       }
@@ -121,6 +88,49 @@ export default function ExcelImport({ apiCall, onDone }) {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (file) handleFile(file);
+  }
+
+  function handleMapConfirm() {
+    if (!columnMapping["ProductID"]) {
+      setError("Please map the Product ID (Code) field. It is required.");
+      return;
+    }
+    setError("");
+
+    try {
+      const mapped = sheetData.map(r => {
+        const obj = {};
+        PRODUCT_FIELDS.forEach(field => {
+          const selectedHeader = columnMapping[field.key];
+          obj[field.key] = r[selectedHeader] !== undefined ? String(r[selectedHeader]).trim() : "";
+        });
+
+        // Numeric fields: parse numeric
+        obj["WholeSale"] = parseFloat(String(obj["WholeSale"] || "0").replace(/[^0-9.]/g, "")) || 0;
+        obj["SellingPrice"] = parseFloat(String(obj["SellingPrice"] || "0").replace(/[^0-9.]/g, "")) || 0;
+        obj["Price"] = parseFloat(String(obj["Price"] || "0").replace(/[^0-9.]/g, "")) || 0;
+
+        return obj;
+      }).filter(r => r.ProductID); // skip empty rows
+
+      // Sanitize
+      const sanitized = mapped.map(r => {
+        const clean = {};
+        for (const [k, v] of Object.entries(r)) {
+          if (typeof v === 'string') {
+            clean[k] = v.replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
+          } else {
+            clean[k] = v;
+          }
+        }
+        return clean;
+      });
+
+      setRows(sanitized);
+      setStep("preview");
+    } catch(err) {
+      setError("Failed to map sheet columns: " + err.message);
+    }
   }
 
   async function doImport() {
@@ -138,7 +148,6 @@ export default function ExcelImport({ apiCall, onDone }) {
         const stateRow = allLists.flatMap(l => l).find(r => r?.State !== undefined);
         if (stateRow && stateRow.State !== 0) {
           console.warn(`Batch ${Math.floor(i/50)+1} failed, skipping:`, stateRow.Message);
-          // Skip failed batch and continue
           continue;
         }
         totalProcessed += batch.length;
@@ -151,7 +160,7 @@ export default function ExcelImport({ apiCall, onDone }) {
     setImporting(false);
   }
 
-  const PREVIEW_COLS = ["ProductID","BrandName","ProductModel","ProductCat1","ProductType","ProductColor","ProductBrandNme","BatteryPartNumber","ExtrInfo","WholeSale","SellingPrice","Price"];
+  const PREVIEW_COLS = ["ProductID","BrandName","ProductModel","ProductCat1","ProductType","ProductColor","ProductBrandNme","BatteryPartNumber","ExtrInfo","WholeSale","SellingPrice","Price","ImageURL"];
 
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"1rem"}}>
@@ -167,6 +176,7 @@ export default function ExcelImport({ apiCall, onDone }) {
               <div style={{fontSize:15,fontWeight:600,color:"#fff"}}>Import Products from Excel</div>
               <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",marginTop:2}}>
                 {step==="upload" && "Upload your Excel file to import products"}
+                {step==="map" && "Map Excel columns to product fields"}
                 {step==="preview" && `${rows.length} rows ready to import`}
                 {step==="done" && "Import completed successfully"}
               </div>
@@ -177,19 +187,19 @@ export default function ExcelImport({ apiCall, onDone }) {
 
         {/* Steps indicator */}
         <div style={{display:"flex",padding:"0.75rem 1.5rem",borderBottom:"1px solid rgba(255,255,255,0.07)",gap:0,flexShrink:0}}>
-          {[{key:"upload",label:"1. Upload"},{key:"preview",label:"2. Preview"},{key:"done",label:"3. Done"}].map((s,i) => (
+          {[{key:"upload",label:"1. Upload"},{key:"map",label:"2. Map"},{key:"preview",label:"3. Preview"},{key:"done",label:"4. Done"}].map((s,i) => (
             <div key={s.key} style={{display:"flex",alignItems:"center",gap:0}}>
               <div style={{display:"flex",alignItems:"center",gap:6,padding:"4px 10px",borderRadius:20,
                 background: step===s.key?"rgba(160,248,127,0.12)":"transparent",
-                color: step===s.key?"#a0f87f": ["upload","preview","done"].indexOf(step) > i ?"rgba(255,255,255,0.5)":"rgba(255,255,255,0.2)",
+                color: step===s.key?"#a0f87f": ["upload","map","preview","done"].indexOf(step) > i ?"rgba(255,255,255,0.5)":"rgba(255,255,255,0.2)",
                 fontSize:12,fontWeight:step===s.key?600:400}}>
-                {["upload","preview","done"].indexOf(step) > i
+                {["upload","map","preview","done"].indexOf(step) > i
                   ? <i className="ti ti-circle-check" style={{fontSize:14}} aria-hidden="true"></i>
                   : <span style={{width:16,height:16,borderRadius:"50%",border:"1.5px solid currentColor",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:10}}>{i+1}</span>
                 }
                 {s.label}
               </div>
-              {i < 2 && <i className="ti ti-chevron-right" style={{fontSize:12,color:"rgba(255,255,255,0.15)",margin:"0 2px"}} aria-hidden="true"></i>}
+              {i < 3 && <i className="ti ti-chevron-right" style={{fontSize:12,color:"rgba(255,255,255,0.15)",margin:"0 2px"}} aria-hidden="true"></i>}
             </div>
           ))}
         </div>
@@ -216,19 +226,46 @@ export default function ExcelImport({ apiCall, onDone }) {
                 </div>
                 <input ref={fileRef} type="file" accept=".xlsx,.xls" style={{display:"none"}} onChange={e=>handleFile(e.target.files[0])}/>
               </div>
+            </div>
+          )}
 
-              {/* Column mapping info */}
-              <div style={{marginTop:"1.5rem",background:"rgba(255,255,255,0.03)",borderRadius:10,border:"1px solid rgba(255,255,255,0.07)",padding:"1rem"}}>
-                <div style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>Expected Excel Columns</div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-                  {Object.entries(COL_MAP).map(([excel, sp]) => (
-                    <div key={excel} style={{display:"flex",alignItems:"center",gap:6,fontSize:12}}>
-                      <span style={{color:"rgba(255,255,255,0.5)",background:"rgba(255,255,255,0.05)",borderRadius:4,padding:"2px 6px",fontFamily:"monospace"}}>{excel}</span>
-                      <i className="ti ti-arrow-right" style={{fontSize:11,color:"rgba(255,255,255,0.2)"}} aria-hidden="true"></i>
-                      <span style={{color:"#a0f87f",fontSize:11}}>{sp}</span>
-                    </div>
-                  ))}
-                </div>
+          {/* Map Columns Step */}
+          {step==="map" && (
+            <div>
+              <div style={{fontSize:13,color:"rgba(255,255,255,0.6)",marginBottom:"1rem"}}>
+                Please verify or correct how your Excel columns map to the product fields below.
+              </div>
+              <div style={{background:"rgba(255,255,255,0.03)",borderRadius:12,border:"1px solid rgba(255,255,255,0.07)",overflow:"hidden",maxHeight:"45vh",overflowY:"auto"}}>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+                  <thead>
+                    <tr style={{background:"rgba(255,255,255,0.03)",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
+                      <th style={{padding:"10px 14px",textAlign:"left",color:"rgba(255,255,255,0.35)",fontSize:11,textTransform:"uppercase"}}>Product Field</th>
+                      <th style={{padding:"10px 14px",textAlign:"left",color:"rgba(255,255,255,0.35)",fontSize:11,textTransform:"uppercase"}}>Excel Column Header</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {PRODUCT_FIELDS.map(f => (
+                      <tr key={f.key} style={{borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
+                        <td style={{padding:"10px 14px",fontWeight:500,color:"#fff",display:"flex",alignItems:"center",gap:6}}>
+                          {f.label}
+                          {f.required && <span style={{color:"#f87171"}}>*</span>}
+                        </td>
+                        <td style={{padding:"10px 14px"}}>
+                          <select
+                            value={columnMapping[f.key] || ""}
+                            onChange={e => setColumnMapping(prev => ({ ...prev, [f.key]: e.target.value }))}
+                            style={{width:"100%",height:34,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,color:"#fff",padding:"0 10px",outline:"none",fontSize:13}}
+                          >
+                            <option value="" style={{background:"#152338",color:"rgba(255,255,255,0.4)"}}>-- Unmapped / Skip --</option>
+                            {excelHeaders.map(h => (
+                              <option key={h} value={h} style={{background:"#152338",color:"#fff"}}>{h}</option>
+                            ))}
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
@@ -269,7 +306,7 @@ export default function ExcelImport({ apiCall, onDone }) {
                           const isNumeric = ["Price", "WholeSale", "SellingPrice"].includes(c);
                           return (
                             <td key={c} style={{padding:"7px 10px",color: c === "ProductID" ? "#a0f87f" : isNumeric ? "#fbbf24" : "rgba(255,255,255,0.7)",whiteSpace:"nowrap",maxWidth:180,overflow:"hidden",textOverflow:"ellipsis"}}>
-                              {isNumeric ? "SYP " + r[c] : r[c] || "—"}
+                              {isNumeric ? r[c] : r[c] || "—"}
                             </td>
                           );
                         })}
@@ -278,7 +315,6 @@ export default function ExcelImport({ apiCall, onDone }) {
                   </tbody>
                 </table>
               </div>
-
             </div>
           )}
 
@@ -310,16 +346,28 @@ export default function ExcelImport({ apiCall, onDone }) {
               Cancel
             </button>
           )}
+          {step==="map" && (
+            <>
+              <button onClick={()=>{setStep("upload");setFileName("");}}
+                style={{height:38,padding:"0 16px",background:"transparent",color:"rgba(255,255,255,0.5)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,fontSize:13,cursor:"pointer"}}>
+                Back
+              </button>
+              <button onClick={handleMapConfirm}
+                style={{height:38,padding:"0 20px",background:"linear-gradient(135deg,#573ad2,#2e139e)",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
+                <i className="ti ti-arrow-right" style={{fontSize:14}} aria-hidden="true"></i>Next: Preview
+              </button>
+            </>
+          )}
           {step==="preview" && (
             <>
-              <button onClick={onDone}
+              <button onClick={()=>{setStep("map");}}
                 style={{height:38,padding:"0 16px",background:"transparent",color:"rgba(255,255,255,0.5)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,fontSize:13,cursor:"pointer"}}>
-                Cancel
+                Back
               </button>
               <button onClick={doImport} disabled={importing}
                 style={{height:38,padding:"0 20px",background:"linear-gradient(135deg,#573ad2,#2e139e)",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:importing?"not-allowed":"pointer",display:"flex",alignItems:"center",gap:6,opacity:importing?0.7:1}}>
                 {importing
-                  ? <><i className="ti ti-loader spin" style={{fontSize:14}} aria-hidden="true"></i>Importing... {result?.count||0} / {rows.length} rows ({result?.progress||0}%)</>
+                  ? <><i className="ti ti-loader spin" style={{fontSize:14}} aria-hidden="true"></i>Importing...</>
                   : <><i className="ti ti-database-import" style={{fontSize:14}} aria-hidden="true"></i>Import {rows.length} Products</>
                 }
               </button>

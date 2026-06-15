@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
+import useSortable from "../hooks/useSortable.jsx";
 
 const STATUS_STYLE = {
   "Active":           { background:"rgba(160,248,127,0.15)", color:"#a0f87f" },
   "InActive":         { background:"rgba(248,113,113,0.15)", color:"#f87171" },
+  "Blocked":          { background:"rgba(248,113,113,0.15)", color:"#f87171" },
+  "Rejected":         { background:"rgba(248,113,113,0.15)", color:"#f87171" },
   "Approval Waiting": { background:"rgba(251,191,36,0.15)", color:"#fbbf24" },
 };
 
@@ -30,6 +33,14 @@ const ACTIONS = {
     { op:"Partner Rest Password",  label:"Reset Password", icon:"ti-lock-open",    style:{ background:"rgba(160,248,127,0.1)", color:"#6366f1" }, modalIcon:"ti-lock-open", modalColor:"#ede9fe", modalIconColor:"#6366f1", btnClass:"info", desc:"A new password will be generated and sent to the partner's mobile." },
     { op:"Partner Un-Block",       label:"Un-Block",       icon:"ti-circle-check", style:{ background:"rgba(160,248,127,0.15)", color:"#16a34a" }, modalIcon:"ti-circle-check", modalColor:"#dcfce7", modalIconColor:"#16a34a", btnClass:"success", desc:"This will unblock the partner and restore their access." },
   ],
+  "Blocked": [
+    { op:"Partner Rest Password",  label:"Reset Password", icon:"ti-lock-open",    style:{ background:"rgba(160,248,127,0.1)", color:"#6366f1" }, modalIcon:"ti-lock-open", modalColor:"#ede9fe", modalIconColor:"#6366f1", btnClass:"info", desc:"A new password will be generated and sent to the partner's mobile." },
+    { op:"Partner Un-Block",       label:"Un-Block",       icon:"ti-circle-check", style:{ background:"rgba(160,248,127,0.15)", color:"#16a34a" }, modalIcon:"ti-circle-check", modalColor:"#dcfce7", modalIconColor:"#16a34a", btnClass:"success", desc:"This will unblock the partner and restore their access." },
+  ],
+  "Rejected": [
+    { op:"Partner Rest Password",  label:"Reset Password", icon:"ti-lock-open",    style:{ background:"rgba(160,248,127,0.1)", color:"#6366f1" }, modalIcon:"ti-lock-open", modalColor:"#ede9fe", modalIconColor:"#6366f1", btnClass:"info", desc:"A new password will be generated and sent to the partner's mobile." },
+    { op:"Partner Approve",        label:"Approve",        icon:"ti-circle-check", style:{ background:"#16a34a", color:"#fff" }, modalIcon:"ti-circle-check", modalColor:"#dcfce7", modalIconColor:"#16a34a", btnClass:"success", desc:"This will activate the partner and grant them access to the platform." },
+  ],
 };
 
 function ConfirmModal({ action, partner, onConfirm, onCancel, loading }) {
@@ -53,11 +64,11 @@ function ConfirmModal({ action, partner, onConfirm, onCancel, loading }) {
         </div>
         <div style={{padding:"1rem 1.25rem",borderTop:"0.5px solid #e2e8f0",display:"flex",gap:8,justifyContent:"flex-end"}}>
           <button onClick={onCancel} disabled={loading}
-            style={{height:36,padding:"0 16px",borderRadius:8,fontSize:13,fontWeight:500,cursor:"pointer",border:"0.5px solid #e2e8f0",background:"#1a2540",color:"rgba(255,255,255,0.55)"}}>
+            style={{height:36,padding:"0 16px",borderRadius:8,fontSize:13,fontWeight:500,cursor:"pointer",border:"0.5px solid #e2e8f0",backgroundColor:"#1a2540",color:"rgba(255,255,255,0.55)"}}>
             Cancel
           </button>
           <button onClick={onConfirm} disabled={loading}
-            style={{height:36,padding:"0 16px",borderRadius:8,fontSize:13,fontWeight:500,cursor:"pointer",border:"none",background:action.modalIconColor,color:"#fff",display:"flex",alignItems:"center",gap:6}}>
+            style={{height:36,padding:"0 16px",borderRadius:8,fontSize:13,fontWeight:500,cursor:"pointer",border:"none",backgroundColor:action.modalIconColor,color:"#fff",display:"flex",alignItems:"center",gap:6}}>
             {loading
               ? <><i className="ti ti-loader spin" style={{fontSize:14}} aria-hidden="true"></i>Processing...</>
               : <><i className={`ti ${action.modalIcon}`} style={{fontSize:14}} aria-hidden="true"></i>{action.label}</>
@@ -77,6 +88,8 @@ export default function PartnerDetail({ partner: initialPartner, onBack, onRefre
   const [modal, setModal]         = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [toast, setToast]         = useState(null);
+
+  const { sorted, Th } = useSortable(orders);
 
   useEffect(() => {
     async function loadOrders() {
@@ -240,18 +253,18 @@ export default function PartnerDetail({ partner: initialPartner, onBack, onRefre
             : <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
                 <thead>
                   <tr style={{background:"#152338",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
-                    <th style={th}>Request No</th>
-                    <th style={th}>Client</th>
-                    <th style={th}>Request Date</th>
-                    <th style={th}>Completed</th>
-                    <th style={th}>Rating</th>
-                    <th style={th}>Status</th>
+                    <Th col="RequestNo">Request No</Th>
+                    <Th col="ClientName">Client</Th>
+                    <Th col="RequestDate">Request Date</Th>
+                    <Th col="CompletedDate">Completed</Th>
+                    <Th col="RankValue">Rating</Th>
+                    <Th col="Status">Status</Th>
                   </tr>
                 </thead>
                 <tbody>
                   {orders.length === 0
                     ? <tr><td colSpan={6} style={{padding:"2rem",textAlign:"center",color:"rgba(255,255,255,0.3)"}}>No orders found</td></tr>
-                    : orders.map(o => (
+                    : sorted.map(o => (
                       <tr key={o.RequestNo} style={{borderBottom:"1px solid rgba(255,255,255,0.04)"}}
                         onMouseEnter={e=>e.currentTarget.style.background="rgba(160,248,127,0.05)"}
                         onMouseLeave={e=>e.currentTarget.style.background="transparent"}>

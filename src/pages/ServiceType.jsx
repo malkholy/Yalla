@@ -373,12 +373,12 @@ export default function ServiceType({ apiCall }) {
                           <td style={{...td,maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={r.ServiceDescriptionAR}>{r.ServiceDescriptionAR || "—"}</td>
                           <td style={td}>
                             {parseFloat(r.ServiceFees||0) > 0
-                              ? <span style={{color:"#fbbf24",fontWeight:600}}>SYP {parseFloat(r.ServiceFees).toFixed(2)}</span>
+                              ? <span style={{color:"#fbbf24",fontWeight:600}}>{parseFloat(r.ServiceFees).toFixed(2)}</span>
                               : <span style={{color:"rgba(255,255,255,0.25)"}}>—</span>}
                           </td>
                           <td style={td}>
                             {parseFloat(r.Discount||0) > 0
-                              ? <span style={{color:"#38bdf8",fontWeight:600}}>{parseFloat(r.Discount).toFixed(2)} SYP</span>
+                              ? <span style={{color:"#38bdf8",fontWeight:600}}>{parseFloat(r.Discount).toFixed(2)}</span>
                               : <span style={{color:"rgba(255,255,255,0.25)"}}>—</span>}
                           </td>
                           <td style={td}>

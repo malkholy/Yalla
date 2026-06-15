@@ -95,7 +95,7 @@ export default function ClientRequests({ apiCall }) {
           { label:"Completed",      value:completed,                    color:"#a0f87f" },
           { label:"In Progress",    value:pending,                      color:"#fbbf24" },
           { label:"Canceled",       value:canceled,                     color:"#f87171" },
-          { label:"Total Amount",   value:"SYP "+totalAmount.toLocaleString(), color:"#38bdf8" },
+          { label:"Total Amount",   value:totalAmount.toLocaleString(), color:"#38bdf8" },
         ].map(k => (
           <div key={k.label} style={{background:"rgba(255,255,255,0.04)",borderRadius:10,border:"1px solid rgba(255,255,255,0.07)",padding:"1rem 1.25rem"}}>
             <div style={{fontSize:12,color:"rgba(255,255,255,0.35)",marginBottom:4}}>{k.label}</div>
@@ -181,7 +181,7 @@ export default function ClientRequests({ apiCall }) {
                         <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",marginTop:2}}>{r.ProductModel}</div>
                       </td>
                       <td style={{...td,fontWeight:600,color:"#fbbf24"}}>
-                        SYP {parseFloat(r.TotalAmount||0).toLocaleString()}
+                        {parseFloat(r.TotalAmount||0).toLocaleString()}
                       </td>
                       <td style={td}>
                         {r.RankValue > 0

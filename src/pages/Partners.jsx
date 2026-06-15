@@ -7,6 +7,8 @@ import { useState, useEffect, useRef } from "react";
 const STATUS_STYLE = {
   "Active":           { background:"rgba(160,248,127,0.15)", color:"#a0f87f" },
   "InActive":         { background:"rgba(248,113,113,0.15)", color:"#f87171" },
+  "Blocked":          { background:"rgba(248,113,113,0.15)", color:"#f87171" },
+  "Rejected":         { background:"rgba(248,113,113,0.15)", color:"#f87171" },
   "Approval Waiting": { background:"rgba(251,191,36,0.15)", color:"#fbbf24" },
 };
 
