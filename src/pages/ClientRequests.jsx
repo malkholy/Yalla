@@ -25,12 +25,26 @@ export default function ClientRequests({ apiCall }) {
   const [filterBrand, setFilterBrand]   = useState([]);
   const [filterService, setFilterService] = useState([]);
   const [selected, setSelected] = useState(null);
+  const [serviceTypes, setServiceTypes] = useState([]);
 
   async function load() {
     setLoading(true);
     try {
       const d = await apiCall({ Operation: "Get Clients Requests" });
-      setData(d?.List || []);
+      const rawRequests = d?.List || [];
+
+      const s = await apiCall({ Operation: "Get Service Type" });
+      const types = s?.List || [];
+      setServiceTypes(types);
+
+      const mapped = rawRequests.map(r => {
+        const t = types.find(x => x.ServiceTypeID === r.ServiceTypeID);
+        return {
+          ...r,
+          ServiceType: t ? t.ServiceName : "—"
+        };
+      });
+      setData(mapped);
     } catch {}
     setLoading(false);
   }
@@ -57,6 +71,7 @@ export default function ClientRequests({ apiCall }) {
       String(r.RequestNo||"").includes(search) ||
       (r.ClientName||"").toLowerCase().includes(search.toLowerCase()) ||
       (r.PartnerEnglishName||"").toLowerCase().includes(search.toLowerCase()) ||
+      (r.ServiceType||"").toLowerCase().includes(search.toLowerCase()) ||
       (r.ProductModel||"").toLowerCase().includes(search.toLowerCase());
     const matchState   = filterState.length   === 0 || filterState.includes(r.StateDescription?.trim());
     const matchBrand   = filterBrand.length   === 0 || filterBrand.includes(r.BrandName);
@@ -78,6 +93,7 @@ export default function ClientRequests({ apiCall }) {
     {label:"Client",      key:"ClientName"},
     {label:"Partner",     key:"PartnerEnglishName"},
     {label:"Service",     key:"ServiceDescription"},
+    {label:"Service Type",key:"ServiceType"},
     {label:"Brand",       key:"BrandName"},
     {label:"Model",       key:"ProductModel"},
     {label:"Amount",      key:"TotalAmount"},
@@ -143,6 +159,7 @@ export default function ClientRequests({ apiCall }) {
                   <Th col="ClientName">Client</Th>
                   <Th col="PartnerEnglishName">Partner</Th>
                   <Th col="ServiceDescription">Service</Th>
+                  <Th col="ServiceType">Service Type</Th>
                   <Th col="BrandName">Brand / Model</Th>
                   <Th col="TotalAmount">Amount</Th>
                   <Th col="RankValue">Rating</Th>
@@ -151,7 +168,7 @@ export default function ClientRequests({ apiCall }) {
               </thead>
               <tbody>
                 {filtered.length === 0
-                  ? <tr><td colSpan={9} style={{padding:"2rem",textAlign:"center",color:"rgba(255,255,255,0.25)"}}>No records found</td></tr>
+                  ? <tr><td colSpan={10} style={{padding:"2rem",textAlign:"center",color:"rgba(255,255,255,0.25)"}}>No records found</td></tr>
                   : filtered.map((r, i) => (
                     <tr key={i}
                       style={{borderBottom:"1px solid rgba(255,255,255,0.04)",cursor:"pointer",background:"transparent"}}
@@ -174,6 +191,11 @@ export default function ClientRequests({ apiCall }) {
                       <td style={td}>
                         <span style={{background:"rgba(192,132,252,0.1)",color:"#c084fc",borderRadius:20,padding:"3px 10px",fontSize:12}}>
                           {r.ServiceDescription||"—"}
+                        </span>
+                      </td>
+                      <td style={td}>
+                        <span style={{background:"rgba(56,189,248,0.1)",color:"#38bdf8",borderRadius:20,padding:"3px 10px",fontSize:12}}>
+                          {r.ServiceType||"—"}
                         </span>
                       </td>
                       <td style={td}>
