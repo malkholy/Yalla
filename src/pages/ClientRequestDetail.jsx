@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 const STATE_STYLE = {
   "Completed":  { background:"rgba(160,248,127,0.15)", color:"#a0f87f" },
@@ -103,23 +103,30 @@ function Timeline({ r }) {
 export default function ClientRequestDetail({ request: initial, onBack, apiCall }) {
   const [r, setR]           = useState(initial);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab]         = useState("info");
   const [serviceTypes, setServiceTypes] = useState([]);
 
-  useEffect(() => {
-    async function load() {
+  const load = useCallback(async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
       setLoading(true);
-      try {
-        const d = await apiCall({ Operation: "Get Clients Requests", LineData: String(initial.RequestNo) });
-        if (d?.List0?.[0]) setR(d.List0[0]);
-
-        const s = await apiCall({ Operation: "Get Service Type" });
-        if (s?.List) setServiceTypes(s.List);
-      } catch {}
-      setLoading(false);
     }
+    try {
+      const d = await apiCall({ Operation: "Get Clients Requests", LineData: String(initial.RequestNo) });
+      if (d?.List0?.[0]) setR(d.List0[0]);
+
+      const s = await apiCall({ Operation: "Get Service Type" });
+      if (s?.List) setServiceTypes(s.List);
+    } catch {}
+    setLoading(false);
+    setRefreshing(false);
+  }, [initial.RequestNo, apiCall]);
+
+  useEffect(() => {
     load();
-  }, [initial.RequestNo]);
+  }, [load]);
 
   const status = r.StateDescription?.trim();
   const hasCoords = r.Expr2 && r.Expr3 && r.Expr2 !== "" && r.Expr3 !== "";
@@ -140,13 +147,45 @@ export default function ClientRequestDetail({ request: initial, onBack, apiCall 
   return (
     <div>
       {/* Breadcrumb */}
-      <div style={{display:"flex",alignItems:"center",gap:6,fontSize:13,color:"rgba(255,255,255,0.3)",marginBottom:"1.25rem"}}>
-        <span onClick={onBack} style={{color:"#a0f87f",cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
-          <i className="ti ti-clipboard-list" style={{fontSize:14}} aria-hidden="true"></i>
-          Client Requests
-        </span>
-        <i className="ti ti-chevron-right" style={{fontSize:12}} aria-hidden="true"></i>
-        <span style={{color:"#fff",fontWeight:500}}>#{r.RequestNo}</span>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:6,fontSize:13,color:"rgba(255,255,255,0.3)",marginBottom:"1.25rem"}}>
+        <div style={{display:"flex",alignItems:"center",gap:6}}>
+          <span onClick={onBack} style={{color:"#a0f87f",cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+            <i className="ti ti-clipboard-list" style={{fontSize:14}} aria-hidden="true"></i>
+            Client Requests
+          </span>
+          <i className="ti ti-chevron-right" style={{fontSize:12}} aria-hidden="true"></i>
+          <span style={{color:"#fff",fontWeight:500}}>#{r.RequestNo}</span>
+        </div>
+        <button
+          onClick={() => load(true)}
+          disabled={loading || refreshing}
+          style={{
+            background: "rgba(255, 255, 255, 0.05)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            borderRadius: "6px",
+            color: "#fff",
+            padding: "4px 10px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            fontSize: "12px",
+            fontWeight: 500,
+            transition: "all 0.2s ease",
+            outline: "none"
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
+            e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.2)";
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+            e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.1)";
+          }}
+        >
+          <i className={`ti ti-refresh ${refreshing ? "spin" : ""}`} style={{fontSize: 12}} aria-hidden="true"></i>
+          {refreshing ? "Refreshing..." : "Refresh"}
+        </button>
       </div>
 
       {/* Hero */}
