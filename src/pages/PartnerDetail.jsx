@@ -91,6 +91,11 @@ export default function PartnerDetail({ partner: initialPartner, onBack, onRefre
 
   const { sorted, Th } = useSortable(orders);
 
+  const completedOrders = orders.filter(o => o.Status === "Completed").length;
+  const avgRating = orders.filter(o => o.RankValue > 0).length
+    ? (orders.reduce((sum, o) => sum + (o.RankValue || 0), 0) / orders.filter(o => o.RankValue > 0).length).toFixed(1)
+    : "—";
+
   useEffect(() => {
     async function loadOrders() {
       setLoading(true);
@@ -189,6 +194,19 @@ export default function PartnerDetail({ partner: initialPartner, onBack, onRefre
             <span><i className="ti ti-phone" style={{fontSize:12,marginRight:3}} aria-hidden="true"></i>{partner.MobileNo||"—"}</span>
             {partner.LastMaintDate && <span><i className="ti ti-calendar" style={{fontSize:12,marginRight:3}} aria-hidden="true"></i>{new Date(partner.LastMaintDate).toLocaleDateString()}</span>}
           </div>
+        </div>
+        {/* KPIs in hero */}
+        <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+          {[
+            { label:"Total Orders",   value:orders.length,    color:"#818cf8" },
+            { label:"Completed",      value:completedOrders,  color:"#86efac" },
+            { label:"Avg Rating",     value:avgRating,        color:"#fcd34d" },
+          ].map(k => (
+            <div key={k.label} style={{background:"rgba(255,255,255,0.08)",borderRadius:8,padding:"8px 14px",textAlign:"center",minWidth:80}}>
+              <div style={{fontSize:11,color:"rgba(255,255,255,0.5)",marginBottom:3}}>{k.label}</div>
+              <div style={{fontSize:16,fontWeight:700,color:k.color}}>{k.value}</div>
+            </div>
+          ))}
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",justifyContent:"flex-end"}}>
           <span style={{...(STATUS_STYLE[partner.Status]||{}),borderRadius:20,padding:"3px 12px",fontSize:12,fontWeight:500}}>{partner.Status}</span>
