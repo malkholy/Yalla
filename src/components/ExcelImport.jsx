@@ -86,6 +86,10 @@ export default function ExcelImport({ apiCall, onDone }) {
           if (!matched) {
             matched = headers.find(h => {
               const cleanH = h.toLowerCase();
+              // Prevent greedy matching: Price should not auto-match to Selling Price or Wholesale Price
+              if (field.key === "Price" && (cleanH.includes("selling") || cleanH.includes("wholesale") || cleanH.includes("whole sale") || cleanH.includes("whole_sale"))) {
+                return false;
+              }
               return aliases.some(alias => cleanH.includes(alias.toLowerCase()));
             });
           }
@@ -118,7 +122,7 @@ export default function ExcelImport({ apiCall, onDone }) {
         const obj = {};
         PRODUCT_FIELDS.forEach(field => {
           const selectedHeader = columnMapping[field.key];
-          obj[field.key] = r[selectedHeader] !== undefined ? String(r[selectedHeader]).trim() : "";
+          obj[field.key] = (selectedHeader && r[selectedHeader] !== undefined) ? String(r[selectedHeader]).trim() : "";
         });
 
         // Numeric fields: parse numeric
