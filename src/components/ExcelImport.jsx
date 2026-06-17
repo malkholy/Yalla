@@ -47,7 +47,15 @@ export default function ExcelImport({ apiCall, onDone }) {
         setExcelHeaders(headers);
 
         const raw = XLSX.utils.sheet_to_json(ws, { defval: "" });
-        setSheetData(raw);
+        // Trim keys in raw objects to match trimmed headers
+        const cleanRaw = raw.map(row => {
+          const cleanRow = {};
+          for (const [k, v] of Object.entries(row)) {
+            cleanRow[String(k).trim()] = v;
+          }
+          return cleanRow;
+        });
+        setSheetData(cleanRaw);
 
         // Pre-match headers to initialize mapping
         const COLUMN_HEADERS_MAP = {
@@ -69,10 +77,18 @@ export default function ExcelImport({ apiCall, onDone }) {
         const initialMap = {};
         PRODUCT_FIELDS.forEach(field => {
           const aliases = COLUMN_HEADERS_MAP[field.key] || [];
-          const matched = headers.find(h => {
+          // First pass: try exact match
+          let matched = headers.find(h => {
             const cleanH = h.toLowerCase();
-            return aliases.some(alias => cleanH === alias.toLowerCase() || cleanH.includes(alias.toLowerCase()));
+            return aliases.some(alias => cleanH === alias.toLowerCase());
           });
+          // Second pass: fallback to includes match
+          if (!matched) {
+            matched = headers.find(h => {
+              const cleanH = h.toLowerCase();
+              return aliases.some(alias => cleanH.includes(alias.toLowerCase()));
+            });
+          }
           initialMap[field.key] = matched || "";
         });
         setColumnMapping(initialMap);
