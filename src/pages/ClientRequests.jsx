@@ -101,7 +101,7 @@ export default function ClientRequests({ apiCall }) {
     {label:"Rating",      key:"RankValue"},
   ];
 
-  if (selected) return <ClientRequestDetail request={selected} onBack={()=>setSelected(null)} apiCall={apiCall}/>
+  if (selected) return <ClientRequestDetail request={selected} onBack={()=>setSelected(null)} onRefresh={load} apiCall={apiCall}/>
   return (
     <div id="requests-table">
       {/* KPIs */}

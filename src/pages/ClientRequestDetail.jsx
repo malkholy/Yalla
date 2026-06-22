@@ -100,7 +100,7 @@ function Timeline({ r }) {
   );
 }
 
-export default function ClientRequestDetail({ request: initial, onBack, apiCall }) {
+export default function ClientRequestDetail({ request: initial, onBack, onRefresh, apiCall }) {
   const [r, setR]           = useState(initial);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -116,14 +116,19 @@ export default function ClientRequestDetail({ request: initial, onBack, apiCall 
     try {
       const d = await apiCall({ Operation: "Get Clients Requests", LineData: String(initial.RequestNo) });
       const updatedRequest = d?.List?.[0] || d?.List0?.[0];
-      if (updatedRequest) setR(updatedRequest);
+      if (updatedRequest) {
+        setR(updatedRequest);
+        if (isRefresh && onRefresh) {
+          onRefresh();
+        }
+      }
 
       const s = await apiCall({ Operation: "Get Service Type" });
       if (s?.List) setServiceTypes(s.List);
     } catch {}
     setLoading(false);
     setRefreshing(false);
-  }, [initial.RequestNo, apiCall]);
+  }, [initial.RequestNo, apiCall, onRefresh]);
 
   useEffect(() => {
     load();
