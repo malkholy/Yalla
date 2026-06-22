@@ -115,7 +115,8 @@ export default function ClientRequestDetail({ request: initial, onBack, apiCall 
     }
     try {
       const d = await apiCall({ Operation: "Get Clients Requests", LineData: String(initial.RequestNo) });
-      if (d?.List0?.[0]) setR(d.List0[0]);
+      const updatedRequest = d?.List?.[0] || d?.List0?.[0];
+      if (updatedRequest) setR(updatedRequest);
 
       const s = await apiCall({ Operation: "Get Service Type" });
       if (s?.List) setServiceTypes(s.List);
