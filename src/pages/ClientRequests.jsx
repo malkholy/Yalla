@@ -21,9 +21,9 @@ export default function ClientRequests({ apiCall }) {
   const [data, setData]         = useState([]);
   const [loading, setLoading]   = useState(false);
   const [search, setSearch]     = useState("");
-  const [filterState, setFilterState]   = useState([]);
-  const [filterBrand, setFilterBrand]   = useState([]);
-  const [filterService, setFilterService] = useState([]);
+  const [filterState, setFilterState]   = useState(null);
+  const [filterBrand, setFilterBrand]   = useState(null);
+  const [filterService, setFilterService] = useState(null);
   const [selected, setSelected] = useState(null);
   const [serviceTypes, setServiceTypes] = useState([]);
 
@@ -55,14 +55,6 @@ export default function ClientRequests({ apiCall }) {
   const brands   = [...new Set(data.map(r => r.BrandName).filter(Boolean))];
   const services = [...new Set(data.map(r => r.ServiceDescription).filter(Boolean))];
 
-  useEffect(() => {
-    if (data.length) {
-      setFilterState(states);
-      setFilterBrand(brands);
-      setFilterService(services);
-    }
-  }, [data.length]);
-
   const { sorted, Th } = useSortable(data);
   // useKeyboardNav moved below filtered
 
@@ -73,9 +65,9 @@ export default function ClientRequests({ apiCall }) {
       (r.PartnerEnglishName||"").toLowerCase().includes(search.toLowerCase()) ||
       (r.ServiceType||"").toLowerCase().includes(search.toLowerCase()) ||
       (r.ProductModel||"").toLowerCase().includes(search.toLowerCase());
-    const matchState   = filterState.length   === 0 || filterState.includes(r.StateDescription?.trim());
-    const matchBrand   = filterBrand.length   === 0 || filterBrand.includes(r.BrandName);
-    const matchService = filterService.length === 0 || filterService.includes(r.ServiceDescription);
+    const matchState   = !filterState   || filterState.includes(r.StateDescription?.trim());
+    const matchBrand   = !filterBrand   || filterBrand.includes(r.BrandName);
+    const matchService = !filterService || filterService.includes(r.ServiceDescription);
     return matchSearch && matchState && matchBrand && matchService;
   });
   const { rowProps } = useKeyboardNav(filtered, setSelected);
@@ -134,9 +126,9 @@ export default function ClientRequests({ apiCall }) {
               placeholder="Search request, client, partner..."
               style={{paddingLeft:28,paddingRight:10,height:34,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,fontSize:13,outline:"none",width:220,color:"#fff"}}/>
           </div>
-          <FilterDropdown label="Status"  options={states}   selected={filterState}   onChange={setFilterState}/>
-          <FilterDropdown label="Brand"   options={brands}   selected={filterBrand}   onChange={setFilterBrand}/>
-          <FilterDropdown label="Service" options={services} selected={filterService} onChange={setFilterService}/>
+          <FilterDropdown label="Status"  options={states}   selected={filterState || states}   onChange={setFilterState}/>
+          <FilterDropdown label="Brand"   options={brands}   selected={filterBrand || brands}   onChange={setFilterBrand}/>
+          <FilterDropdown label="Service" options={services} selected={filterService || services} onChange={setFilterService}/>
           <button onClick={load} disabled={loading}
             style={{display:"flex",alignItems:"center",gap:5,height:34,padding:"0 12px",background:"#573ad2",color:"#fff",border:"none",borderRadius:8,fontSize:13,cursor:"pointer"}}>
             <i className={`ti ti-refresh${loading?" spin":""}`} style={{fontSize:14}} aria-hidden="true"></i>Refresh
