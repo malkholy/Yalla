@@ -315,7 +315,7 @@ export default function ClientRequestDetail({ request: initial, onBack, onRefres
 
         const leafletHTML = `<!DOCTYPE html><html><head>
           <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-          <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></s' + 'cript>
+          <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>
           <style>*{margin:0;padding:0;}#map{width:100%;height:100vh;}</style>
         </head><body><div id="map"></div><script>
           const points=[];
@@ -335,7 +335,7 @@ export default function ClientRequestDetail({ request: initial, onBack, onRefres
             else map.fitBounds(bounds,{padding:[40,40]});
             window.addEventListener('message',e=>{if(e.data&&e.data.type==='flyTo')map.flyTo([e.data.lat,e.data.lng],17,{animate:true,duration:1});});
           }
-        </s' + 'cript></body></html>`;
+        <\/script></body></html>`;
 
         return (
           <div style={{background:"rgba(255,255,255,0.03)",borderRadius:12,border:"1px solid rgba(255,255,255,0.07)",padding:"1.25rem"}}>
