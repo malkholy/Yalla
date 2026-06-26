@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import useSortable from "../hooks/useSortable.jsx";
 import useKeyboardNav from "../hooks/useKeyboardNav.jsx";
 import ClientRequestDetail from "./ClientRequestDetail.jsx";
@@ -27,7 +27,7 @@ export default function ClientRequests({ apiCall }) {
   const [selected, setSelected] = useState(null);
   const [serviceTypes, setServiceTypes] = useState([]);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const d = await apiCall({ Operation: "Get Clients Requests" });
@@ -47,9 +47,9 @@ export default function ClientRequests({ apiCall }) {
       setData(mapped);
     } catch {}
     setLoading(false);
-  }
+  }, [apiCall]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   const states   = [...new Set(data.map(r => r.StateDescription?.trim()).filter(Boolean))];
   const brands   = [...new Set(data.map(r => r.BrandName).filter(Boolean))];
