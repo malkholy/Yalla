@@ -131,6 +131,10 @@ export default function ClientRequestDetail({ request: initial, onBack, onRefres
   }, [initial.RequestNo, apiCall, onRefresh]);
 
   useEffect(() => {
+    setR(initial);
+  }, [initial]);
+
+  useEffect(() => {
     load();
   }, [load]);
 

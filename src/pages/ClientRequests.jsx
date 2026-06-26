@@ -51,6 +51,15 @@ export default function ClientRequests({ apiCall }) {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    if (selected) {
+      const updated = data.find(r => r.RequestNo === selected.RequestNo);
+      if (updated) {
+        setSelected(updated);
+      }
+    }
+  }, [data, selected]);
+
   const states   = [...new Set(data.map(r => r.StateDescription?.trim()).filter(Boolean))];
   const brands   = [...new Set(data.map(r => r.BrandName).filter(Boolean))];
   const services = [...new Set(data.map(r => r.ServiceDescription).filter(Boolean))];
