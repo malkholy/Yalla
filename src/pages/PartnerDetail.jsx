@@ -80,6 +80,45 @@ function ConfirmModal({ action, partner, onConfirm, onCancel, loading }) {
   );
 }
 
+function DetailPasswordCell({ value }) {
+  const [show, setShow] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const pwd = value || "—";
+  if (!value) return <div style={infoValue}>—</div>;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <span style={{ fontFamily: show ? "inherit" : "monospace", letterSpacing: show ? "normal" : 2, fontSize: show ? 13 : 14, color: "#fff", fontWeight: 500 }}>
+        {show ? pwd : "••••••••"}
+      </span>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <button
+          onClick={() => setShow(!show)}
+          title={show ? "Hide password" : "Show password"}
+          style={{ background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 4, color: "rgba(255,255,255,0.6)", cursor: "pointer", padding: "3px 8px", fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}
+        >
+          <i className={`ti ${show ? "ti-eye-off" : "ti-eye"}`} style={{ fontSize: 13 }} aria-hidden="true" />
+          {show ? "Hide" : "Show"}
+        </button>
+        <button
+          onClick={handleCopy}
+          title="Copy password"
+          style={{ background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 4, color: copied ? "#a0f87f" : "rgba(255,255,255,0.6)", cursor: "pointer", padding: "3px 8px", fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}
+        >
+          <i className={`ti ${copied ? "ti-check" : "ti-copy"}`} style={{ fontSize: 13 }} aria-hidden="true" />
+          {copied ? "Copied" : "Copy"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function PartnerDetail({ partner: initialPartner, onBack, onRefresh, apiCall }) {
   const [partner, setPartner]     = useState(initialPartner);
   const [tab, setTab]             = useState("info");
@@ -242,13 +281,17 @@ export default function PartnerDetail({ partner: initialPartner, onBack, onRefre
       {/* Info Tab */}
       {tab === "info" && (
         <div style={{background:"#1a2540",borderRadius:12,border:"1px solid rgba(255,255,255,0.07)",padding:"1.25rem"}}>
-          <div style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"1rem"}}>Contact details</div>
+          <div style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"1rem"}}>Account & Contact details</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             <div style={infoItem}>
               <div style={infoLabel}><i className="ti ti-phone" style={{fontSize:11,marginRight:3}} aria-hidden="true"></i>Mobile</div>
               <div style={infoValue}>{partner.MobileNo||"—"}</div>
             </div>
             <div style={infoItem}>
+              <div style={infoLabel}><i className="ti ti-lock" style={{fontSize:11,marginRight:3}} aria-hidden="true"></i>Partner Password</div>
+              <DetailPasswordCell value={partner.PartnerPassword || partner.partnerPassword} />
+            </div>
+            <div style={{...infoItem,gridColumn:"span 2"}}>
               <div style={infoLabel}><i className="ti ti-calendar" style={{fontSize:11,marginRight:3}} aria-hidden="true"></i>Last update</div>
               <div style={infoValue}>{partner.LastMaintDate ? new Date(partner.LastMaintDate).toLocaleDateString() : "—"}</div>
             </div>

@@ -12,6 +12,26 @@ const STATUS_STYLE = {
   "Approval Waiting": { background:"rgba(251,191,36,0.15)", color:"#fbbf24" },
 };
 
+function PasswordCell({ value }) {
+  const [show, setShow] = useState(false);
+  const pwd = value || "—";
+  if (!value) return <span style={{ color: "rgba(255,255,255,0.3)" }}>—</span>;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <span style={{ fontFamily: show ? "inherit" : "monospace", letterSpacing: show ? "normal" : 2, fontSize: show ? 13 : 14, color: "#fff" }}>
+        {show ? pwd : "••••••••"}
+      </span>
+      <button
+        onClick={(e) => { e.stopPropagation(); setShow(!show); }}
+        title={show ? "Hide password" : "Show password"}
+        style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", padding: 2, display: "flex", alignItems: "center" }}
+      >
+        <i className={`ti ${show ? "ti-eye-off" : "ti-eye"}`} style={{ fontSize: 13 }} aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
 export default function Partners({ apiCall }) {
   const [data, setData]       = useState([]);
   const [loading, setLoading] = useState(false);
@@ -31,11 +51,11 @@ export default function Partners({ apiCall }) {
   useEffect(() => { load(); }, []);
 
   const { sorted, Th } = useSortable(data);
-  // useKeyboardNav moved below filtered
 
   const filtered = sorted.filter(r =>
     (r.PartnerEnglishName || "").toLowerCase().includes(search.toLowerCase()) ||
-    (r.MobileNo || "").includes(search)
+    (r.MobileNo || "").includes(search) ||
+    (r.PartnerPassword || r.partnerPassword || "").toLowerCase().includes(search.toLowerCase())
   );
   const { rowProps } = useKeyboardNav(filtered, setSelectedPartner);
 
@@ -45,7 +65,6 @@ export default function Partners({ apiCall }) {
   const inactive = data.filter(r => r.Status === "InActive").length;
   const waiting  = data.filter(r => r.Status === "Approval Waiting").length;
 
-  // Export Excel
   if (selectedPartner) return <PartnerDetail partner={selectedPartner} onBack={()=>setSelectedPartner(null)} apiCall={apiCall} onRefresh={load} />;
   return (
     <div id="partners-table">
@@ -75,15 +94,15 @@ export default function Partners({ apiCall }) {
           <div style={{position:"relative"}}>
             <i className="ti ti-search" style={{position:"absolute",left:9,top:"50%",transform:"translateY(-50%)",fontSize:13,color:"rgba(255,255,255,0.3)"}} aria-hidden="true"></i>
             <input value={search} onChange={e=>setSearch(e.target.value)}
-              placeholder="Search name or mobile..."
-              style={{paddingLeft:28,paddingRight:10,height:34,border:"1px solid rgba(255,255,255,0.07)",borderRadius:8,fontSize:13,outline:"none",width:210}}/>
+              placeholder="Search name, mobile, password..."
+              style={{paddingLeft:28,paddingRight:10,height:34,border:"1px solid rgba(255,255,255,0.07)",borderRadius:8,fontSize:13,outline:"none",width:230}}/>
           </div>
           <button onClick={load} disabled={loading}
             style={{display:"flex",alignItems:"center",gap:5,height:34,padding:"0 12px",background:"#6366f1",color:"#fff",border:"none",borderRadius:8,fontSize:13,cursor:"pointer"}}>
             <i className={`ti ti-refresh${loading?" spin":""}`} style={{fontSize:14}} aria-hidden="true"></i>
             Refresh
           </button>
-          <ExportButtons exportId="partners-table" filename="Partners" excelData={filtered} excelColumns={[{label:"ID",key:"PartnerID"},{label:"Name",key:"PartnerEnglishName"},{label:"Mobile",key:"MobileNo"},{label:"Address",key:"PartnerAddress"},{label:"Status",key:"Status"},{label:"Last Update",key:"LastMaintDate"}]} />
+          <ExportButtons exportId="partners-table" filename="Partners" excelData={filtered.map(r=>({...r, PartnerPassword: r.PartnerPassword || r.partnerPassword || ""}))} excelColumns={[{label:"ID",key:"PartnerID"},{label:"Name",key:"PartnerEnglishName"},{label:"Mobile",key:"MobileNo"},{label:"Password",key:"PartnerPassword"},{label:"Address",key:"PartnerAddress"},{label:"Status",key:"Status"},{label:"Last Update",key:"LastMaintDate"}]} />
         </div>
       </div>
 
@@ -100,6 +119,7 @@ export default function Partners({ apiCall }) {
                   <Th col="PartnerID">#</Th>
                   <Th col="PartnerEnglishName">Partner</Th>
                   <Th col="MobileNo">Mobile</Th>
+                  <Th col="PartnerPassword">Password</Th>
                   <Th col="PartnerAddress">Address</Th>
                   <Th col="Status">Status</Th>
                   <Th col="LastMaintDate">Last Update</Th>
@@ -107,7 +127,7 @@ export default function Partners({ apiCall }) {
               </thead>
               <tbody>
                 {filtered.length === 0
-                  ? <tr><td colSpan={6} style={{padding:"2rem",textAlign:"center",color:"rgba(255,255,255,0.3)"}}>No records found</td></tr>
+                  ? <tr><td colSpan={7} style={{padding:"2rem",textAlign:"center",color:"rgba(255,255,255,0.3)"}}>No records found</td></tr>
                   : filtered.map((r, i) => (
                     <tr key={i} {...rowProps(i, r)}>
                       <td style={td}>{r.PartnerID}</td>
@@ -125,6 +145,9 @@ export default function Partners({ apiCall }) {
                         </div>
                       </td>
                       <td style={td}>{r.MobileNo||"—"}</td>
+                      <td style={td}>
+                        <PasswordCell value={r.PartnerPassword || r.partnerPassword} />
+                      </td>
                       <td style={{...td,maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",color:"rgba(255,255,255,0.4)"}}>{r.PartnerAddress||"—"}</td>
                       <td style={td}>
                         <span style={{...(STATUS_STYLE[r.Status]||{background:"#0e1520",color:"rgba(255,255,255,0.4)"}),borderRadius:20,padding:"3px 10px",fontSize:12,fontWeight:500}}>
