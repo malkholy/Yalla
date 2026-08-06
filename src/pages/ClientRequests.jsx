@@ -86,7 +86,17 @@ export default function ClientRequests({ apiCall }) {
   const completed  = data.filter(r => r.StateDescription?.trim() === "Completed").length;
   const pending    = data.filter(r => ["Pending","On The Way","Arrived","Accepted","Received"].includes(r.StateDescription?.trim())).length;
   const canceled   = data.filter(r => r.StateDescription?.trim().startsWith("Canceled")).length;
-  const totalAmount = data.reduce((s,r) => s + (parseFloat(r.TotalAmount)||0), 0);
+
+  const activeAmount = data
+    .filter(r => {
+      const st = r.StateDescription?.trim() || "";
+      return st !== "Completed" && !st.startsWith("Canceled");
+    })
+    .reduce((s, r) => s + (parseFloat(r.TotalAmount) || 0), 0);
+
+  const completedAmount = data
+    .filter(r => r.StateDescription?.trim() === "Completed")
+    .reduce((s, r) => s + (parseFloat(r.TotalAmount) || 0), 0);
 
   const excelColumns = [
     {label:"Request No",  key:"RequestNo"},
@@ -106,17 +116,18 @@ export default function ClientRequests({ apiCall }) {
   return (
     <div id="requests-table">
       {/* KPIs */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12,marginBottom:"1.25rem"}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:12,marginBottom:"1.25rem"}}>
         {[
-          { label:"Total Requests", value:total,                        color:"#a0f87f" },
-          { label:"Completed",      value:completed,                    color:"#a0f87f" },
-          { label:"In Progress",    value:pending,                      color:"#fbbf24" },
-          { label:"Canceled",       value:canceled,                     color:"#f87171" },
-          { label:"Total Amount",   value:totalAmount.toLocaleString(), color:"#38bdf8" },
+          { label:"Total Requests",                 value:total,                          color:"#a0f87f" },
+          { label:"Completed",                     value:completed,                      color:"#a0f87f" },
+          { label:"In Progress",                   value:pending,                        color:"#fbbf24" },
+          { label:"Canceled",                      value:canceled,                       color:"#f87171" },
+          { label:"Amount (Excl. Canceled & Completed)", value:activeAmount.toLocaleString(), color:"#38bdf8" },
+          { label:"Completed Amount",              value:completedAmount.toLocaleString(),color:"#a0f87f" },
         ].map(k => (
-          <div key={k.label} style={{background:"rgba(255,255,255,0.04)",borderRadius:10,border:"1px solid rgba(255,255,255,0.07)",padding:"1rem 1.25rem"}}>
-            <div style={{fontSize:12,color:"rgba(255,255,255,0.35)",marginBottom:4}}>{k.label}</div>
-            <div style={{fontSize:22,fontWeight:700,color:k.color}}>{k.value}</div>
+          <div key={k.label} style={{background:"rgba(255,255,255,0.04)",borderRadius:10,border:"1px solid rgba(255,255,255,0.07)",padding:"1rem 1.1rem"}}>
+            <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",marginBottom:4,lineHeight:1.3,height:28,display:"flex",alignItems:"center"}}>{k.label}</div>
+            <div style={{fontSize:20,fontWeight:700,color:k.color}}>{k.value}</div>
           </div>
         ))}
       </div>
